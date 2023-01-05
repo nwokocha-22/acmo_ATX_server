@@ -6,23 +6,19 @@ import os
 class ActivityLogger(logging.Logger):
 
     def __init__(self, path=None):
-        #Thread.__init__(self)
-        self.path = path
-        self.startLogger()
+        super(ActivityLogger, self).__init__(name="activityLog", level=logging.DEBUG)
+        self.configLog()
         print("activity log thread started")
         
-    def startLogger(self):
-        filename = str()
-        if os.path.exists(self.path):
-            filename = self.path
-        else:
-            filename = "activityLog.log"
+    def configLog(self):
+        self.setLevel(logging.DEBUG)
+        self.addHandler(logging.StreamHandler)
         logging.basicConfig(
-            #filename="activityLog.log", 
-            filemode='w',
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            level=logging.DEBUG, 
-            )
+        filename="activityLog.log", 
+        filemode='w',
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=logging.DEBUG, 
+        )
 
     def open_log(self):
         """
@@ -30,9 +26,7 @@ class ActivityLogger(logging.Logger):
         """
         path = None
         try:
-            if os.path.exists(self.path): 
-                path = self.path 
-            else: path = "activityLog.txt"
+            path = "activityLog.log"
             with open(path, 'r') as log:
                 log_file = log.read()
             return log_file
@@ -40,7 +34,10 @@ class ActivityLogger(logging.Logger):
             print("path does not exist in the path specified")
 
 if __name__=="__main__":
-    logg = ActivityLogger(Path("activityLog.log"))
+    logg = ActivityLogger("activityLog.log")
     logg.info('o man')
+    log =logg.open_log()
+    print(log)
+   
 
     
