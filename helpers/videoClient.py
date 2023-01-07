@@ -1,96 +1,57 @@
-import cv2
-from concurrent.futures import ThreadPoolExecutor
 import socket
+from threading import Thread
+import cv2
 import numpy as np
-import time
-import base64
 
-import queue
-import os
-# For details visit pyshine.com
 
-#: SENDS VIDEO
-q = queue.Queue(maxsize=10)
+class ReceiveVideo:
 
-filename =  'count.mp4'
-command = "ffmpeg -i {} -ab 160k -ac 2 -ar 44100 -vn {}".format(filename,'temp.wav')
-os.system(command)
+	BUFFER = 1024 * 1024
 
-BUFF_SIZE = 65536
-server_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-server_socket.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFF_SIZE)
-host_name = socket.gethostname()
-host_ip = socket.gethostbyname(host_name)
-print(host_ip)
-port = 9688
-socket_address = (host_ip, port)
-server_socket.bind(socket_address)
-print('Listening at:',socket_address)
+	def __init__(self, host, port):
+		self.address = (host, port)
 
-vid = cv2.VideoCapture(filename)
-FPS = 60 #vid.get(cv2.CAP_PROP_FPS)
-global TS
-TS = (0.5/FPS)
-BREAK=False
-print('FPS:',FPS,TS)
-totalNoFrames = int(vid.get(cv2.CAP_PROP_FRAME_COUNT))
-durationInSeconds = float(totalNoFrames) / float(FPS)
-d=vid.get(cv2.CAP_PROP_POS_MSEC)
-print(durationInSeconds,d)
+	def recv_data(self, addrs):
+		# create a window with the with title of the client ip 
+		cv2.namedWindow(addr[0])
 
-def video_stream_gen():
-   
-    WIDTH=400
-    while(vid.isOpened()):
-        try:
-            _, frame = vid.read()
-            frame = imutils.resize(frame, width=WIDTH)
-            q.put(frame)
-        except:
-            os._exit(1)
-    print('Player closed')
-    BREAK=True
-    vid.release()
+		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
+			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			sock_udp.bind(self.address)
+
+			while True:
+				packet, addr = sock_udp.recvfrom(self.BUFFER) # 1 MB buffer
+				client_ip = addr[0]
+
+				#: stream the data from that particular client
+				if client_ip == addrs[0]:
+					img = cv2.imdecode(np.frombuffer(packet, np.uint8), cv2.IMREAD_COLOR)
+					title = f'{client_ip if addr else "VIDEO"}'
+					cv2.imshow(title, img)
+					key = cv2.waitKey(1) & 0xFF
+
+				if key == ord('q'):
+					self.sock_udp.close()
+					break
+
+	def connect(self):
+		"""
+		establishes a three way hand shake with the clients, and spawn a thread to send data
+		to the connect client
+		"""
 	
+		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
+			sock_tcp.connect(self.address)
+			while True:
+				#: waiting for a client to connect
+				
+				client, addr = sock_tcp.accept()
+				print("connected to:", client)
+				thread = Thread(target=self.recv_data, args=(addr))
+				thread.start()
+				thread.join()
 
-def video_stream():
-    global TS
-    fps,st,frames_to_count,cnt = (0,0,1,0)
-    cv2.namedWindow('TRANSMITTING VIDEO')        
-    cv2.moveWindow('TRANSMITTING VIDEO', 10,30) 
-    while True:
-        msg, client_addr = server_socket.recvfrom(BUFF_SIZE)
-        print('GOT connection from:', client_addr)
-        WIDTH=400
-        
-        while True:
-            frame = q.get()
-            encoded, buffer = cv2.imencode('.jpeg',frame,[cv2.IMWRITE_JPEG_QUALITY,80])
-            message = base64.b64encode(buffer)
-            print("packet transmitted", message)
-            server_socket.sendto(message, client_addr)
-            frame = cv2.putText(frame,'FPS: '+str(round(fps,1)),(10,40),cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,0,255),2)
-            if cnt == frames_to_count:
-                try:
-                    fps = (frames_to_count/(time.time()-st))
-                    st=time.time()
-                    cnt=0
-                    if fps>FPS:
-                        TS+=0.001
-                    elif fps<FPS:
-                        TS-=0.001
-                    else:
-                        pass
-                except:
-                    pass
-            cnt+=1
-            
-            cv2.imshow('TRANSMITTING VIDEO', frame)
-            key = cv2.waitKey(int(1000*TS)) & 0xFF	
-            if key == ord('q'):
-                os._exit(1)
-                TS=False
-                break	
-
-with ThreadPoolExecutor(max_workers=2) as executor:
-	executor.submit(video_stream)
+	
+if __name__=="__main__":
+	video_server = ReceiveVideo('', 1980)
+	video_server.connect()

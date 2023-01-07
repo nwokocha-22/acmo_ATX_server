@@ -1,54 +1,61 @@
-
-import cv2, socket
+import socket
+from threading import Thread
+import cv2
 import numpy as np
-import time, os
-import base64
 
-BUFFER =1024*1024 #65536
 
-BREAK = False
-client_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-client_socket.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,BUFFER)
-host_name = socket.gethostname()
-host_ip = "0.0.0.0"  #socket.gethostbyname(host_name)
-#print(host_ip)
-#port = 9688
-port = 5005
-message = b'Hello'
+class ReceiveVideo:
 
-#client_socket.sendto(message,(host_ip,port))
+	BUFFER = 1024 * 1024
 
-def video_stream():
+	def __init__(self, host, port):
+		self.address = (host, port)
+
+	def recv_data(self, addrs):
+		# create a window with the with title of the client ip 
+		cv2.namedWindow(addr[0])
+
+		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
+			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			sock_udp.bind(self.address)
+
+			while True:
+				packet, addr = sock_udp.recvfrom(self.BUFFER) # 1 MB buffer
+				client_ip = addr[0]
+
+				#: stream the data from that particular client
+				if client_ip == addrs[0]:
+					img = cv2.imdecode(np.frombuffer(packet, np.uint8), cv2.IMREAD_COLOR)
+					title = f'{client_ip if addr else "VIDEO"}'
+					cv2.imshow(title, img)
+					key = cv2.waitKey(1) & 0xFF
+
+				if key == ord('q'):
+					self.sock_udp.close()
+					break
+
+	def connect(self):
+		"""
+		establishes a three way hand shake with the clients, and spawn a thread to send data
+		to the connect client
+		"""
 	
-	# cv2.namedWindow('RECEIVING VIDEO')        
-	# cv2.moveWindow('RECEIVING VIDEO', 10, 360) 
-	fps,st,frames_to_count,cnt = (0,0,20,0)
-	while True:
-		packet,_ = client_socket.recvfrom(BUFFER)
-		data = base64.b64decode(packet,' /')
-		npdata = np.fromstring(data,dtype=np.uint8)
-	
-		frame = cv2.imdecode(npdata, 1)
-		frame = cv2.putText(frame,'FPS: '+str(fps),(10,40),cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,0,255),2)
-		cv2.imshow("RECEIVING VIDEO",frame)
-		key = cv2.waitKey(1) & 0xFF
-	
-		if key == ord('q'):
-			client_socket.close()
-			os._exit(1)
-			break
-
-		if cnt == frames_to_count:
-			try:
-				fps = round(frames_to_count/(time.time()-st))
-				st=time.time()
-				cnt=0
-			except:
-				pass
-		cnt+=1
-		
+		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
+			sock_tcp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			sock_tcp.bind(self.address)
+			sock_tcp.listen(5)
 			
-	client_socket.close()
-	cv2.destroyAllWindows() 
+			while True:
+				#: waiting for a client to connect
+				print("waiting for a new connection")
+				client, addr = sock_tcp.accept()
+				print("connected to:", client)
+				thread = Thread(target=self.recv_data, args=(addr))
+				thread.start()
+				thread.join()
+
+	
 if __name__=="__main__":
-    video_stream()
+	video_server = ReceiveVideo('', 1980)
+	video_server.connect()
+		
