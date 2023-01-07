@@ -31,7 +31,7 @@ class ReceiveVideo:
 					key = cv2.waitKey(1) & 0xFF
 
 				if key == ord('q'):
-					self.sock_udp.close()
+					sock_udp.close()
 					break
 
 	def connect(self):
@@ -50,9 +50,13 @@ class ReceiveVideo:
 				print("waiting for a new connection")
 				client, addr = sock_tcp.accept()
 				print("connected to:", client)
-				thread = Thread(target=self.recv_data, args=(addr))
-				thread.start()
-				thread.join()
+				data = sock_tcp.recv(1024).decode()
+				if data == "ready":
+					client.send(str.encode("shoot"))
+					thread = Thread(target=self.recv_data, args=(addr))
+					thread.start()
+					thread.join()
+
 
 	
 if __name__=="__main__":
