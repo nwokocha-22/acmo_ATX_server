@@ -39,16 +39,20 @@ SOLUTION
 : pip install opencv-python
 
 """
+
+def createWindow():
+    cv2.namedWindow("VIDEO", cv2.WINDOW_FULLSCREEN)
+
 def receive_video():
+    cv2.namedWindow('TRANSMITTING VIDEO') 
+            
     while True:
         # Receive a video frame from a client
         print("waiting to receive packet")
         packet, addr = sock.recvfrom(BUFFER)  # 1 MB buffer
-
         img = cv2.imdecode(np.frombuffer(packet, np.uint8), cv2.IMREAD_COLOR)
         title = f'{addr[0] if addr else "VIDEO"}'
         cv2.imshow(title, img)
-       
         key = cv2.waitKey(1) & 0xFF
 	
         if key == ord('q'):
