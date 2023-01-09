@@ -2,31 +2,62 @@ import socket
 from threading import Thread
 import cv2
 import numpy as np
+from datetime import datetime
+from pathlib import Path
+import os
 
 
 class ReceiveVideo:
 
-	BUFFER = 1024 * 1024
+	BUFFER:int = 1024 * 1024
+	FPS:int = 30
+	size:tuple = (720, 450)
+	date:datetime = datetime.now()
+
+	print(date)
 
 	def __init__(self, host, port):
+		self.port = port
 		self.address = (host, port)
+		fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+		self.filename = f'{self.date}-screen-recording.mkv'
+		self.video_file = cv2.VideoWriter(self.filename, fourcc, self.FPS, self.size)
 
-	def recv_data(self, addrs):
+
+	def processImg(self, sock, ip):
+		while True:
+			packet, addr = sock.recvfrom(self.BUFFER) # 1 MB buffer
+			client_ip = addr[0]
+
+			#: stream the data from that particular client
+			if client_ip == ip:
+				img = cv2.imdecode(np.frombuffer(packet, np.uint8), cv2.IMREAD_COLOR)
+				title = f'{client_ip if addr else "VIDEO"}'
+				cv2.imshow(title, img)
+				key = cv2.waitKey(1) & 0xFF
+				if key == ord('q'):
+					sock.close()
+					break
+
+	def recv_data(self, client_ip):
 		# create a window with the with title of the client ip 
-		cv2.namedWindow(addr[0])
+		print("receiving data...")
+		cv2.namedWindow(client_ip, cv2.WINDOW_NORMAL)
 
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
 			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			sock_udp.bind(self.address)
+			sock_udp.bind(('', self.port))
 
 			while True:
 				packet, addr = sock_udp.recvfrom(self.BUFFER) # 1 MB buffer
-				client_ip = addr[0]
-
+				
 				#: stream the data from that particular client
-				if client_ip == addrs[0]:
+				if client_ip == addr[0]:
 					img = cv2.imdecode(np.frombuffer(packet, np.uint8), cv2.IMREAD_COLOR)
 					title = f'{client_ip if addr else "VIDEO"}'
+
+					#. write to video File:
+
 					cv2.imshow(title, img)
 					key = cv2.waitKey(1) & 0xFF
 
@@ -34,6 +65,9 @@ class ReceiveVideo:
 					sock_udp.close()
 					break
 
+		# thread = Thread(target=processImg, args=(sock_udp, addrs[0]))
+		# thread.start()
+	
 	def connect(self):
 		"""
 		establishes a three way hand shake with the clients, and spawn a thread to send data
@@ -50,16 +84,48 @@ class ReceiveVideo:
 				print("waiting for a new connection")
 				client, addr = sock_tcp.accept()
 				print("connected to:", client)
-				data = sock_tcp.recv(1024).decode()
+				#: create_dir(addr[0])
+				file_path = self.create_dir(client_ip, self.date.month)
+				data = client.recv(1024).decode()
+				print("message from client:", data)
 				if data == "ready":
 					client.send(str.encode("shoot"))
-					thread = Thread(target=self.recv_data, args=(addr))
+					thread = Thread(target=self.recv_data, args=(addr,))
 					thread.start()
-					thread.join()
+					print("exited thread")
 
+	def create_dir(self, ip, month, filename):
+		#: if video recoring folder exists, open it, else create it
+		#: if existing folder for the current month, open it, else create it
+		#: if video_recoding for today, open it, else create it
+		#: write streamed frame to video_file
 
+		path = Path("C:\Recorded Videos")
 	
+		#: check if Recorded Videos folder exists in the local drive dir
+		if not path.exists():
+			dir  = path/ip/month/filename
+			return Path.mkdir(dir)
+			
+		else:
+			#: if the folder exits, navigate to it.
+			#: if there is a folder for the client, navigate to it
+			#: if there is a folder for the current month, navigate to it
+			#: if there is a file for the current day, wirte to it, else create it
+			
+			folders = path.glob(ip)
+			folder = [for folder in path.iterdir() if folder.name == ip][0]
+
+		return file_dir
+
+	def save_video(self, frame):
+		pass
+
 if __name__=="__main__":
-	video_server = ReceiveVideo('', 1980)
+	#IP = socket.gethostbyname(socket.gethostname())
+	IP = "127.0.0.1"
+	print("IP", IP)
+	PORT = 5005
+	video_server = ReceiveVideo(IP, PORT)
 	video_server.connect()
 		
