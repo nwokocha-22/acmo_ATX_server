@@ -19,10 +19,6 @@ class ReceiveVideo:
 	def __init__(self, host, port):
 		self.port = port
 		self.address = (host, port)
-		fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-		self.filename = f'{self.date}-screen-recording.mkv'
-		self.video_file = cv2.VideoWriter(self.filename, fourcc, self.FPS, self.size)
-
 
 	def processImg(self, sock, ip):
 		while True:
@@ -40,13 +36,16 @@ class ReceiveVideo:
 					break
 
 	def recv_data(self, client_ip, video_file):
-		# create a window with the with title of the client ip 
+	
 		print("receiving data...")
+		
+		#: create a video player with a title of the client's ip address
 		cv2.namedWindow(client_ip, cv2.WINDOW_NORMAL)
 
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
 			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			sock_udp.bind(('', self.port))
+
 			while True:
 				packet, addr = sock_udp.recvfrom(self.BUFFER) # 1 MB buffer
 				
@@ -57,15 +56,15 @@ class ReceiveVideo:
 
 					#. write frame to video File:
 					video_file.write(frame)
+					#video_file.write(frame)
+
+					#: display the frame
 					cv2.imshow(title, frame)
 					key = cv2.waitKey(1) & 0xFF
 
 				if key == ord('q'):
 					sock_udp.close()
 					break
-				
-		# thread = Thread(target=processImg, args=(sock_udp, addrs[0]))
-		# thread.start()
 
 		#: release the video file
 		video_file.release()
@@ -84,44 +83,88 @@ class ReceiveVideo:
 			while True:
 				#: waiting for a client to connect
 				print("waiting for a new connection")
+
 				client, addr = sock_tcp.accept()
+
 				print("connected to:", client)
 
-				#: create_dir(addr[0])
-				filepath = self.create_dir(addr[0], self.date.month, self.filename)
+				video_file = self.get_videio_file(addr[0])
+
 				data = client.recv(1024).decode()
 
 				print("message from client:", data)
 				if data == "ready":
 					client.send(str.encode("shoot"))
-					thread = Thread(target=self.recv_data, args=(addr, filepath))
+					thread = Thread(target=self.recv_data, args=(addr[0], video_file))
 					thread.start()
 					print("exited thread")
 
-	def create_dir(self, client_ip, month, filename):
-		#: if video recoring folder exists, open it, else create it
-		#: if existing folder for the current month, open it, else create it
-		#: if video_recoding for today, open it, else create it
-		#: write streamed frame to video_file
-
-		path = Path("C:\Recorded Videos")/client_ip/month/f'{self.date}-screen-recording.mkv'
-		#: check if Recorded Videos folder exists in the local drive dir
-		if not path.exists():
-			return Path.mkdir(dir)
-
-		else:
-			#: if the folder exits, navigate to it.
-			#: if there is a folder for the client, navigate to it
-			#: if there is a folder for the current month, navigate to it
-			#: if there is a file for the current day, wirte to it, else create it
+	def create_dir(self, client_ip):
+		"""
+		Creates the path where to save the video file if it doesn't exist yet
+		----------------
+		parameter:
+			:client_ip: the ip of the client
+		----------------
+		return: 
+			Path: the path where the video file is saved
+		"""
+		date = datetime.now()
+		today = date.today().strftime("%d-%m-%Y")
+		filename = f'{today}-screen-recording'
+		root_folder = Path("C:/Recorded Videos")
+		try:
+			path = Path.joinpath(root_folder, client_ip, f"{date.month}", filename)
+			if path.exists():
+				return path
+			else:
+				os.makedirs(path)
+				return path
+		except FileNotFoundError as err:
+			print(err)
 			
-			folders = path.glob(ip)
-			folder = [for folder in path.iterdir() if folder.name == ip][0]
 
-		return file_dir
+	def create_video_file(self, filename:None, path):
+		"""
+		creates the video file using the path
+		----------------
+		Parameter:
+			:filename: the file. creates a name with today's day if filename is not provide
+			:path: the parent path to the file. this is joined with the filename to create the absolute path
+		----------------
+		Return:
+			:video_file: the videoWriter object where the video frame received from the client will be written
+			:file_path: the path where the video is saved
+		"""
+		if filename is None or not filename.endswith(".mkv"):
+			filename = f"{datetime.now().strftime('%d-%m-%Y')}.mkv"
 
-	def save_video(self, frame):
-		pass
+		file_path = Path.joinpath(path, filename)
+	
+		FPS = 30
+		# SIZE= (720, 450)
+		# FOURCC = cv2.VideoWriter_fourcc(*'MJPG')
+
+		#SIZE = (1920, 1080)
+		SIZE = (300, 400)
+		FOURCC = cv2.VideoWriter_fourcc(*"XVID")
+        #file_name = "user_activity.avi"
+
+		video_file = cv2.VideoWriter(str(file_path), FOURCC, FPS, SIZE)
+
+		return video_file, file_path
+			
+	
+	def get_videio_file(self, ip):
+		"""
+		gets the created video file
+		---------------
+		Parameter:
+			ip: client's ip
+		"""
+		path = self.create_dir(IP)
+		video, _ = self.create_video_file("video", path)
+		return video
 
 if __name__=="__main__":
 	#IP = socket.gethostbyname(socket.gethostname())
@@ -130,4 +173,5 @@ if __name__=="__main__":
 	PORT = 5005
 	video_server = ReceiveVideo(IP, PORT)
 	video_server.connect()
+	#video_server.connect()
 		
