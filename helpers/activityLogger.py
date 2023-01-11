@@ -6,7 +6,7 @@ import os
 class ActivityLogger(logging.Logger):
 
     def __init__(self, path=None):
-        super(ActivityLogger, self).__init__(name="activityLog", level=logging.DEBUG)
+        #super().__init__(name="activityLog", level=logging.DEBUG)
         self.configLog()
         print("activity log thread started")
         

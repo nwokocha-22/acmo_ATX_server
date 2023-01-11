@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from pynput import keyboard, mouse
 from threading import Thread
 import time
+from statistics import mean
 
 @dataclass
 class MouseActivity:
@@ -87,12 +88,36 @@ class KeyMouseMonitor(KeyboardActivity, MouseActivity):
     def keyStrokeCount(self, value):
         self._key_stroke_count = value
 
-if __name__=="__main__":
-    monitor =KeyMouseMonitor()
-    while True:
-        key_count = monitor.get_keyStrokeCount
-        mouse_count = monitor.get_mouseCount
-        print(f"key count:{key_count}\nmouse count:{mouse_count}")
-        time.sleep(5)
+    def getAverage(self, time=60):
+        """ 
+        Gets the average key stroke and mouse move per minute or hour 
+        ----------------
+        parameter:
+            :time: the interval to estimate average (default = 60 minutes)
+        ---------------
+        return:
+            :avrg_KeyStroke: average key stroke per minute
+            :avrg_mouseMove: average mouse move per minute
+        """
+
+        key_stroke = self.get_keyStrokeCount
+        mouse_move = self.get_mouseCount
+
+        avrg_keyStroke = key_stroke // time
+        avrg_mouseMove = mouse_move // time
+
+        self.keyStrokeCount = 0
+        self.mouseCount = 0
+
+        return avrg_keyStroke, avrg_mouseMove
+
+
+# if __name__=="__main__":
+#     monitor =KeyMouseMonitor()
+#     while True:
+#         key_count = monitor.get_keyStrokeCount
+#         mouse_count = monitor.get_mouseCount
+#         print(f"key count:{key_count}\nmouse count:{mouse_count}")
+#         time.sleep(5)
     
     

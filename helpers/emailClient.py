@@ -15,9 +15,7 @@ from datetime import datetime
 class EmailClient(Thread):
 
     def __init__(self, password, sender, receiver) -> None:
-        #super(EmailClient, self).__init__()
-        Thread.__init__(self)
-
+    
         self.ctx = ssl.create_default_context()
         self.password = password
         self.sender = sender

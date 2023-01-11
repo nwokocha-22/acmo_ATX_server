@@ -7,14 +7,14 @@ import win32gui
 import time
 import datetime
 import  win32api
-import signal
 import ctypes
-from collections import defaultdict
 import pickle
 
 from threading import Thread
 
 class ClipboardMonitor(Thread):
+
+    hasDefaulted = True
 
     @dataclass
     class Content:
@@ -23,8 +23,8 @@ class ClipboardMonitor(Thread):
             self.value = value
         
     
-    def __init__(self, on_text:Callable=None, on_image:Callable=None, on_file:Callable=None):
-        Thread.__init__(self)
+    def __init__(self, on_text, on_image, on_file):
+        #Thread.__init__()
         self._on_text=on_text
         self._on_image=on_image
         self._on_files=on_file
@@ -32,8 +32,8 @@ class ClipboardMonitor(Thread):
         self.hasDefaulted = False
         self.initiateConfig()
         self.checkStatus()
-        print("clipboard thread started")
-        #pickle.loads(ClipboardMonitor.LogConfig())
+        print("clipboard thread started..")
+        
 
     def _create_base_window(self) -> int:
         """
@@ -93,7 +93,6 @@ class ClipboardMonitor(Thread):
                 if wc.IsClipboardFormatAvailable(format):
                     return wc.GetClipboardData(format)
                 return 0
-
             if text:= checkFormat(wc.CF_UNICODETEXT):
                 return ClipboardMonitor.Content('text', text)
                 
@@ -169,10 +168,10 @@ class ClipboardMonitor(Thread):
         wc.EmptyClipboard()
         wc.CloseClipboard()
         
-# if __name__=="__main__":
-#     clipboard = ClipboardMonitor(on_text=print, on_file=None, on_image=None)
-#     clipboard.run()
-    #clipboard.join()
+if __name__=="__main__":
+    clipboard = ClipboardMonitor(on_text=print, on_file=None, on_image=None)
+    clipboard.run()
+    clipboard.join()
     
   
         

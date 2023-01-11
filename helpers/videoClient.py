@@ -9,9 +9,14 @@ import queue
 class SendVideo(Thread):
 
     BUFFER = 1024 * 1024
-    def __init__(self, host, port):
-        self.address = (host, port)
+
+    def __init__(self, ip, port):
+        #super.__init__()
+        
+        self.address = (ip, port)
         self.queue = queue.Queue(20)
+        print("video thread started")
+        
       
 
     def send_data(self):
@@ -50,8 +55,8 @@ class SendVideo(Thread):
             
         
                    
-if __name__=="__main__":
-    IP = "127.0.0.1"
-    PORT = 5005
-    video_server = SendVideo(IP, PORT)
-    video_server.connect_to_server()
+# if __name__=="__main__":
+#     IP = "127.0.0.1"
+#     PORT = 5005
+#     video_server = SendVideo(IP, PORT)
+#     video_server.connect_to_server()
