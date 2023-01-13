@@ -96,14 +96,14 @@ def timer(func):
     return _timer
 
 # USE CASE
-"""
-    def callback():
-        print("alarm !!!")
+# if __name__=="__main__":
+#     def callback():
+#         print("alarm !!!")
 
-    @timer
-    def func(callback, interval, mode):
-        print("alarm triggered")
+#     @timer
+#     def func(callback, interval, mode):
+#         print("alarm triggered")
 
-    func(callback, 1, 'sec')
-"""
+#     func(callback, 1, 'sec')
+
     

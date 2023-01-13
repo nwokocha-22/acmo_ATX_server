@@ -1,16 +1,13 @@
-from threading import Thread
-from typing import Union, List, Optional, Callable
+
+from typing import Union, List, Optional
 import win32clipboard as wc
 from pathlib import Path
 from dataclasses import dataclass
 import win32gui
-import time
-import datetime
 import  win32api
 import ctypes
-import pickle
+   
 
-from threading import Thread
 
 class ClipboardMonitor:
 
@@ -31,8 +28,7 @@ class ClipboardMonitor:
        
         print("clipboard thread started..")
     
-        
-
+    
     def _create_base_window(self) -> int:
         """
         Creates a window for listening to clipboard

@@ -192,6 +192,19 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         else:
             self.updateCopiedContent(clear=True)
 
+    def logUserActivities(self):
+        """
+        logs the users keystroke and mouseMove activities every 10 minutes
+        """
+
+        # status = "active"
+        # keystroke, mouseMove= self.getAverage(60 * self._LOG_INTERVAL)
+
+        # if not keystroke and not mouseMove:
+        #     status = "idle"
+
+        # print(f"keystroke:{keystroke}, mouseMoves:{mouseMove}, status:{status}")
+        print("logging user activities")
 
     def disable_clipboard(self, disable=False):
         """
@@ -253,33 +266,46 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         """
         os.system(r"reg add HKCU\software\microsoft\windows\currentversion\run /v%s /t REG_SZ /d %s" % (name, location) )
 
-    @timer
-    def _setTimer(self, callback, interval, mode):
+    # @staticmethod
+    # @timer
+    # def _setTimer(callback, interval, mode):
 
-        """
-        sets the alarm interval.the callback function is called on the expiration of the interval 
-        -------------
-        parameter:
-            :callback: a function that is called when the interval alapses
-            :interval: the duration for the alarm
-            :mode: the time frame i.e either sec, min, or hour
-        """
-        print()
-        
+    #     """
+    #     sets the alarm interval.the callback function is called on the expiration of the interval 
+    #     -------------
+    #     parameter:
+    #         :callback: a function that is called when the interval alapses
+    #         :interval: the duration for the alarm
+    #         :mode: the time frame i.e either sec, min, or hour
+    #     """
+    #     print("timer started") 
+    
+    def caller2(self):
+        print("caller fired")
+        print(self.get_keyStrokeCount)
+
+ 
+    def _setTimer(callback, inteval, mode):
+        print("alarm triggeed!")
         
 if __name__=="__main__":
     current_user = getpass.getuser()
-    ip = "127.0.0.1"
-    port = 5005
-    password = os.environ["PASSWORD"]
+    ip = "127.0.0.1" 
+    port = 5005 
+    password = os.environ["PASSWORD"] 
     sender = os.environ["SENDER"]
     receiver = os.environ["RECEIVER"]
    
+    print(current_user)
     monitor = ActivityMonitor(ip, port, password, sender, receiver) 
-    # thread =Thread(target=monitor._setTimer, args=(lambda x: print("signal triggered", 0.5)))
+
+    #thread = Thread(target=monitor._setTimer, args=(monitor.logUserActivities, 1, 'sec'))
+    # #monitor._setTimer(monitor.logUserActivities, monitor._LOG_INTERVAL, 'sec')
     # thread.start()
+    # thread.join() nnothing more tin ht egame can bring join other the love for christ
     
-    
+
+    monitor._setTimer(monitor.caller2, 10, 'sec')
     
     
 
