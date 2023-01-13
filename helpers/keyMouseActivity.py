@@ -4,7 +4,7 @@ from pynput import keyboard, mouse
 from threading import Thread
 import time
 from statistics import mean
-from helpers.alarm_signal import timer
+#from alarm_signal import timer
 
 @dataclass
 class MouseActivity:
@@ -17,7 +17,7 @@ class MouseActivity:
         
     @staticmethod
     def on_click(x, y, button, pressed):
-        print(x, y)
+        print(x,)
         MouseActivity._mouse_move_count += 1
 
     @staticmethod
@@ -95,21 +95,22 @@ class KeyMouseMonitor(KeyboardActivity, MouseActivity):
         key_stroke = self.get_keyStrokeCount
         mouse_move = self.get_mouseCount
 
-        avrg_keyStroke = key_stroke // time
-        avrg_mouseMove = mouse_move // time
+        # avrg_keyStroke = key_stroke // time
+        # avrg_mouseMove = mouse_move // time
 
         self.keyStrokeCount = 0
         self.mouseCount = 0
 
-        return avrg_keyStroke, avrg_mouseMove
+        #return avrg_keyStroke, avrg_mouseMove
+        return key_stroke, mouse_move
 
     def caller2(self):
         print(self.get_keyStrokeCount)
 
-    @staticmethod
-    @timer
-    def _setTimer(callback, inteval, mode):
-        print("alarm triggeed!")
+    # @staticmethod
+    # @timer
+    # def _setTimer(callback, inteval, mode):
+    #     print("alarm triggeed!")
 
 
 if __name__=="__main__":
@@ -120,4 +121,6 @@ if __name__=="__main__":
     monitor =KeyMouseMonitor()
 
 
-    monitor._setTimer(monitor.caller2, 10, 'sec')
+    #monitor._setTimer(monitor.caller2, 10, 'sec')
+
+    timer(callback, 2, 'sec')

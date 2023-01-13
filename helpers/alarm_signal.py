@@ -65,6 +65,34 @@ class _Timer(threading.Thread):
             self.event.set()
 
 
+
+# def timer(callback, interval, mode):
+
+#     """
+#     A decorator function that calls the function after the interval elapses
+#     -------------
+#     parameter:
+#         :callback: the function to be called
+#         :interval: the specified interval
+#         :mode: the time frame -> sec, min or hour
+#     """
+    
+#     _time = _Timer(interval)
+#     _time.set_mode = mode
+#     _time.start() 
+    
+#     try:
+    
+#         while _time.event.wait(): # waits until the sets method of the thread event is called
+#             _time.event.clear() 
+#             callback()
+#     except:
+
+#         _time.stop() 
+#         _time.join() 
+
+     
+
 def timer(func):
 
     def _timer(callback, interval, mode):
@@ -94,7 +122,6 @@ def timer(func):
 
         return func(callback, interval, mode)
     return _timer
-
 # USE CASE
 # if __name__=="__main__":
 #     def callback():
