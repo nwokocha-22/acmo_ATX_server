@@ -14,22 +14,15 @@ class MouseActivity:
         m = Thread(target=self.mouseMonitor)
         m.start()
         
-
     @staticmethod
     def on_click(x, y, button, pressed):
-        if button == mouse.Button.left:
-            MouseActivity._mouse_move_count += 1
-
-        elif button == mouse.Button.right:
-            MouseActivity._mouse_move_count += 1
+        MouseActivity._mouse_move_count += 1
 
     @staticmethod
     def on_move(x, y):
         MouseActivity._mouse_move_count += 1
-        print(x, y)
 
     def mouseMonitor(self):
-        print("mouse monitored")
         """
         Listens for mouse input
         """
@@ -45,20 +38,16 @@ class KeyboardActivity:
         k = Thread(target = self.keyMonitor)
         k.start()
 
-
     @staticmethod
     def on_press(key):
         KeyboardActivity._key_stroke_count += 1
-        print(key)
         
-
     @staticmethod
     def on_release(key):
         if key == keyboard.Key.esc: 
             return False
     
     def keyMonitor(self):
-        print("keyboard monitored")
         """
         Listens for keyboard inputs
         """
@@ -70,8 +59,8 @@ class KeyMouseMonitor(KeyboardActivity, MouseActivity):
     def __init__(self):
         KeyboardActivity.__init__(self)
         MouseActivity.__init__(self)
-        
-       
+        #super().__init__()
+         
     @property
     def get_mouseCount(self):
         return self._mouse_move_count
@@ -91,7 +80,7 @@ class KeyMouseMonitor(KeyboardActivity, MouseActivity):
     def getAverage(self, time=60):
         """ 
         Gets the average key stroke and mouse move per minute or hour 
-        ----------------
+        ---------------
         parameter:
             :time: the interval to estimate average (default = 60 minutes)
         ---------------
@@ -99,7 +88,6 @@ class KeyMouseMonitor(KeyboardActivity, MouseActivity):
             :avrg_KeyStroke: average key stroke per minute
             :avrg_mouseMove: average mouse move per minute
         """
-
         key_stroke = self.get_keyStrokeCount
         mouse_move = self.get_mouseCount
 

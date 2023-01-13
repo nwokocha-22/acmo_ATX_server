@@ -4,21 +4,21 @@ import cv2
 import numpy as np
 import pyautogui
 import queue
+import time
 
 
-class SendVideo(Thread):
+class SendVideo:
 
     BUFFER = 1024 * 1024
 
     def __init__(self, ip, port):
-        #super.__init__()
-        
+        super().__init__()
+       
         self.address = (ip, port)
         self.queue = queue.Queue(20)
         print("video thread started")
-        
-      
 
+    
     def send_data(self):
         # create a window with the with title of the client ip 
         print("sending data ...")
@@ -43,7 +43,18 @@ class SendVideo(Thread):
         """
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
-                sock_tcp.connect(self.address)
+                connected = False
+
+                while not connected:
+                    try:
+                        sock_tcp.connect(self.address)
+                        connected = True
+
+                        print("connection established")
+                    except Exception:
+                        print("Unable to connect to server. Retrying...")
+                    time.sleep(5)
+                    
                 while True:
                     sock_tcp.send(b"ready")
                     data = sock_tcp.recv(1024).decode()

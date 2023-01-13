@@ -1,10 +1,8 @@
 import smtplib
-from pathlib import Path
+
 import ssl
-from threading import Thread
-import json
-import os
-import socket
+
+
 
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -12,16 +10,14 @@ from email.mime.text import MIMEText
 
 from datetime import datetime
 
-class EmailClient(Thread):
+class EmailClient:
 
-    def __init__(self, password, sender, receiver) -> None:
-    
-        self.ctx = ssl.create_default_context()
-        self.password = password
-        self.sender = sender
-        self.receiver = receiver
+    def __init__(self) -> None:
+        super().__init__()
+        
         print("email thread started")
-    
+       
+
     def message_template(self, user, file_size, content):
         """
         constructs a html and plain messages either of which will sent to the receiver
@@ -43,7 +39,7 @@ class EmailClient(Thread):
                         </p>
                         <h2>
                             File Size:
-                            <b><u><i>{file_size}</i></u></b>
+                            <b><u><i>{file_size} KB</i></u></b>
                         </h2>
                         <h4> Content </h4>
                         <p>
@@ -59,7 +55,7 @@ class EmailClient(Thread):
         plain = f"""\
                 \t Server: {user} \n
                 \t Date: {datetime.now()} \n \n
-                \t File Size: {file_size} \n
+                \t File Size: {file_size} KB\n
                 Content: \n
                 {content}
                 """

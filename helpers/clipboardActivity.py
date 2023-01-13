@@ -12,7 +12,7 @@ import pickle
 
 from threading import Thread
 
-class ClipboardMonitor(Thread):
+class ClipboardMonitor:
 
     hasDefaulted = True
 
@@ -24,15 +24,13 @@ class ClipboardMonitor(Thread):
         
     
     def __init__(self, on_text, on_image, on_file):
-        #Thread.__init__()
+       
         self._on_text=on_text
         self._on_image=on_image
         self._on_files=on_file
-        self.running = True
-        self.hasDefaulted = False
-        self.initiateConfig()
-        self.checkStatus()
+       
         print("clipboard thread started..")
+    
         
 
     def _create_base_window(self) -> int:
@@ -52,7 +50,7 @@ class ClipboardMonitor(Thread):
         print("handler")
 
     def run(self):
-        print("Thread started!")
+        print("Clipthread started!")
 
         hwnd = self._create_base_window()
         ctypes.windll.user32.AddClipboardFormatListener(hwnd)
@@ -121,57 +119,14 @@ class ClipboardMonitor(Thread):
         """
         print("clipboard enabled")
 
-    def initiateConfig(self):
-        """ Creates and saves the logConfig file """
-
-        config = dict()
-
-        config["hasDefaulted"] = False
-        config["time_defaulted"] = None
-        config["copied_file_size"] = 0
-
-        try:
-            with open('logConfig', 'xb') as logConfig:
-                pickle.dump(config, logConfig)
-        except FileExistsError:
-            print("log config file already exists")
-
-    def loadLogConfig(self):
-        """ Loads the log config for writing """
-
-        with open('logConfig', 'rb') as logConfig:
-            log_config = pickle.load(logConfig)
-        return log_config
-
-    def checkStatus(self):
-        """ 
-            Checks if the current user has defaulted by copying file size more than
-            500 in one hour, or 1500 in 24 hours. 
-            if yes, checks if it has been more than 24 hours.
-            If more than 24 hours, enables the clipboard. If less, ensures the clipboard remain disabled.
-        """
-        if Path("logConfig").exists():
-            config = self.loadLogConfig()
-            if config["time_defaulted"]:
-                seconds = datetime.timedelta(time.time() - config["time_defaulted"]).seconds
-                if seconds:
-                    time_elapsed_hour = seconds // 3600
-                    #: if the user defaulted but 24 hours has passed, enable the clipboard
-                    if config["hasDefaulted"] and time_elapsed_hour >= 24:
-                        self.enableClipboard()
-                    else:
-                        #: Be sure the user has defaulted before disabling clipboard
-                        if config["hasDefaulted"]:
-                            self.disableClipboard() 
-
     def clearClipboard(self):
         wc.EmptyClipboard()
         wc.CloseClipboard()
         
-if __name__=="__main__":
-    clipboard = ClipboardMonitor(on_text=print, on_file=None, on_image=None)
-    clipboard.run()
-    clipboard.join()
+# if __name__=="__main__":
+#     clipboard = ClipboardMonitor(on_text=print, on_file=None, on_image=None)
+#     clipboard.run()
+#     clipboard.join()
     
   
         

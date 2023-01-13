@@ -5,26 +5,43 @@ import time
 import signal
 import socket
 import os
+import ssl
+import getpass
 import zipfile
+from datetime import datetime
+from threading import Thread
 from helpers.videoClient import SendVideo as Video
 from helpers.emailClient import EmailClient as Email
 from helpers.keyMouseActivity import KeyMouseMonitor as KeyMouse
 from helpers.clipboardActivity import ClipboardMonitor as Clipboard
 from helpers.activityLogger import ActivityLogger as Logger
+from helpers.policy import CopyPolicy
+from helpers.alarm_signal import timer
+from pathlib import Path
 
 
-class ActivityMonitor(KeyMouse, Video, Email, Clipboard):
+
+class ActivityMonitor(Email, KeyMouse, CopyPolicy):
     """
-    A script that continously monitors the user's activity by capturing video 
-    of the screen and logs all the processes of the user activities.
+    This script continously monitors user's activity by capturing video 
+    of the user's screen, mouse and keyboard activities, and the content copied to clipboard.
+    
+    If the copy policy is violated, an email, which includes the IP address of the User's machine, 
+    size of the file copied, the actual copied content, date and time, is sent to the chief administrator,
+    
+    As a result of this violation, the user's clipboard will be disabled for 24hours even after rebooth
 
-    -   If the user copies more than 500 characters an hour, 
-        or 1500 characters a day in total, then we get emails with the copied content,
+    --------------------
+    TRANSMITION OF CAPTURED VIDEO
+    The captured video is transmitted to a remote server using a UDP socket
 
-    -   and using the clipboard is disabled for 24 hours (even after reboot, etc). 
+    --------------------
+    TRANSMITION OF LOG
+    Logged user activity (Keyboard and mouse) is instantly transmitted a remote server
+    via the Logger socket formmatter
 
-    ---------------------
-    params:
+    --------------------
+    Parents:
         :videoRecorder: a threaded class that captures the screen video frame in mpeg format
         :activityLogger: a class that logs the users activity every 10 minutes
         :emailClient: a class instance that handles sending emails to a recipient email when the user defaults on the content copy policy
@@ -34,37 +51,54 @@ class ActivityMonitor(KeyMouse, Video, Email, Clipboard):
 
     _LOG_INTERVAL = 10
 
-    def __init__(self, ip , port, password, sender, receiver):
+    def __init__(self, ip, port, password, sender, receiver):
 
-
-        KeyMouse.__init__(self)
-        Video.__init__(self, ip, port)
-        Email.__init__(self, password, sender, receiver)
-        Clipboard.__init__(self, on_text=self._on_text, on_image=self._on_image, on_file=self._on_file)
-       
+        #: initialize the parent classes
+        super().__init__()
 
         self.user = socket.gethostbyname(socket.gethostname())
+        self.ctx = ssl.create_default_context()
 
         self._copied_content_size = int()
         self._copied_content = str()
 
-        self._time_in = None
+        #: when the user is logged in
+        self._time_in = datetime.now().strftime("%d-%m-%Y, %H:%M:%S")
+        #: when the user logged out.
         self._time_out = None
         
         self._1_hr_content_size = None
         self._24_hrs_content_size = None
-        
-    
+
+        #: this values are accessed by the Email Parent class through cooperate inheritance
+        self.ip = ip
+        self.port = port
+        self.password = password
+        self.sender = sender
+        self.receiver = receiver
+       
+   
+        #: instantiate the video class and calls the connect_to_server method in a different thread
+        video =Video(ip, port)
+        Thread(target=video.connect_to_server()).start()
+
+        #: instantiate the clipboard class and calls the run method in a different thread
+        clipboard = Clipboard(on_text=self._on_text, on_image=self._on_image, on_file=self._on_file)
+        Thread(target=clipboard.run()).start()
+
     def _on_text(self, text:str):
         """
         is triggered when text is copied to clipboard
         """
         #: check size of the copied content
+        print("text copied")
         text_size = sys.getsizeof(text)
-        self.checkFileSize(text_size, text, "text")
+        self.invokeCopyPolicy(text_size, text, "text")
 
     def getSize_ZippedFiles(self, files):
-
+        """
+        gets the size of the copied file(s) and zips it
+        """
         file_size = 0
         zip = zipfile.ZipFile("copiedFiles.zip", "w")
 
@@ -85,67 +119,51 @@ class ActivityMonitor(KeyMouse, Video, Email, Clipboard):
         """
         is triggered when files are copied to clipboard
         """
-        # file_size = 0
-        
-        # def getFile(path):
-        #     """
-        #     gets the files size
-        #     """
-        #     try:
-        #         if not os.path.islink(path):
-        #             file_size = os.path.getsize(path)
-        #             return round(file_size / 1000)
-        #     except Exception as err:
-        #         print(err)
-                
-        # for file in files:
-        #     file_size += getFile(file)
-            
-        # ZipFile = zipfile.ZipFile("copiedFiles.zip", "w")
-        
-        # for file in files:
-        #     ZipFile.write(file, compress_type=zipfile.ZIP_DEFLATED)
-        # # except FileNotFoundError:
-        # #     print(f"{os.path.basename(file)} not found")
-            
-        # # finally:
-        # ZipFile.close()
 
         file_size, zipped_files = self.getSize_ZippedFiles(files)
-
-        self.checkFileSize(file_size, zipped_files, "file")
+        self.invokeCopyPolicy(file_size, zipped_files, "file")
 
     def _on_image(self, image):
         """
-        is triggered when files are copied to clipboard
+        is triggered when image(s) are copied to clipboard
         """
         image_size = sys.getsizeof(image)
-        self.checkFileSize(image_size, image, "image")
+        self.invokeCopyPolicy(image_size, image, "image")
 
-    def checkFileSize(self, file_size, file, type):
+    def invokeCopyPolicy(self, file_size, file, type):
         """
-        Checks if the size of the copied file is more than five hundred. if yes, calls the notify function.
-        Else, add it to the self._copied_content_size global variable which is checked at the interval of 1 hour
+        Checks if the size of the copied file is more than five hundred. 
+        if yes, invokes a disciplinary action
+        Else, increment the _copied_content_size which is checked at the interval of 1 hour
         -----------------
         parameter:
             file_size: size of the copied file
         -----------------
         return: None
         """
-        print(f"file size: {file_size}\ncontent: {file}\n type: {type}")
-      
-        if file_size >= 50:
-            if type == "text":
-                #: omits attachment for test file
-                self.send_email(self.user,file_size, file )
-                pass
+        if type == "text":
+            if file_size >= 500:
+                self.invokeDisciplinaryAction(self.user, file_size, file, type)
+
+            elif file_size + self._copied_content_size >= 500:
+                updated_size = file_size + self._copied_content_size
+                updated_content = file + self._copied_content
+                self.invokeDisciplinaryAction(self.user, updated_size, updated_content, type)
+
             else:
-                #: send files as attachment if not text (i.e for bytes and images)
-                self.send_email(self.user, file_size, "see attached zipped file(s)", file)
-                pass
-        else:
-            self._copied_content_size += file_size
-            print("copied file size less than 500")
+                self.updateCopiedContent(file, file_size)
+
+    def updateCopiedContent(self, content='', size=0, clear=False):
+        """
+        increment the copied content and content size each time 
+        text file is copied
+        """
+        if clear:
+            self._copied_content_size = 0
+            self._copied_content = ''
+
+        self._copied_content_size += size
+        self._copied_content += "\n" + content
 
     def logActivity(self):
         """
@@ -159,9 +177,7 @@ class ActivityMonitor(KeyMouse, Video, Email, Clipboard):
         """
         calls the log activity function every ten minutes
         """
-        while True:
-            self.logActivity()
-            time.sleep(5)
+        pass
 
     def checkCopiedContent(self):
         """
@@ -172,18 +188,34 @@ class ActivityMonitor(KeyMouse, Video, Email, Clipboard):
         print("content copied!")
         
         if self._copied_content_size >= 500:
-            # Send notification
-            print("Notification sent!")
-            pass
-
-        self._copied_content.clear()
+            self.invokeDisciplinaryAction(self._copied_content_size, self._copied_content, )
+        else:
+            self.updateCopiedContent(clear=True)
 
 
-    def disable_clipboard(self):
+    def disable_clipboard(self, disable=False):
         """
         Disables the clipboard for 24 hours
         """
-        pass
+        print("keyboard is disabled; can't copy file")
+        
+
+    def invokeDisciplinaryAction(self, file_size, file, file_type=None):
+        """
+        This is called when the copy policy is violiated. It sets the users hasDefaulted status
+        to True, set the time of violation, and triggers the function to disable clipboard
+        for 24hours
+        """
+        time = datetime.now().strftime("%d-%m-%Y - %H:%M:%S")
+
+        self.updatePolicy(hasDefaulted=True, timeDefaulted=time)
+        self.disable_clipboard(True)
+
+        if file_type == "text":
+            self.send_email(self.user, file_size, file)
+        else:
+            #: send files as attachment if not text (i.e for bytes and images)
+            self.send_email(self.user, file_size, "see attached zipped file(s)", file)
 
     def handle_time_elapsed_signal(self, signum, frame):
         """
@@ -195,18 +227,58 @@ class ActivityMonitor(KeyMouse, Video, Email, Clipboard):
         else:
             self.hasDefaulted = True
 
-    def estimateTime(self):
+    def estimateTime(self, signum, frame):
         """
         Estimates the number of time the user is idle
         """
+        print("sig num", signum, os.getpid())
+
+        #: kill the process that emits the signal -> SIGPROF
+
+    def _terminateScript(self):
+        """
+         terminates the script when a User is logged out of the remote Machine
+        """
+        os.kill(os.getpid(), signal.SIGPROF)
+
+    def _autoStartScript(self):
+        """
+        - starts the script when a User is logged in
+        """
+        os.startfile("core.exe")
+
+    def autostartProgram(name, location):
+        """ 
+        Automatically start the script when a User is logged in
+        """
+        os.system(r"reg add HKCU\software\microsoft\windows\currentversion\run /v%s /t REG_SZ /d %s" % (name, location) )
+
+    @timer
+    def _setTimer(self, callback, interval, mode):
+
+        """
+        sets the alarm interval.the callback function is called on the expiration of the interval 
+        -------------
+        parameter:
+            :callback: a function that is called when the interval alapses
+            :interval: the duration for the alarm
+            :mode: the time frame i.e either sec, min, or hour
+        """
+        print()
+        
         
 if __name__=="__main__":
+    current_user = getpass.getuser()
     ip = "127.0.0.1"
     port = 5005
     password = os.environ["PASSWORD"]
     sender = os.environ["SENDER"]
     receiver = os.environ["RECEIVER"]
-    monitor = ActivityMonitor(ip, port, password, sender, receiver)  
+   
+    monitor = ActivityMonitor(ip, port, password, sender, receiver) 
+    # thread =Thread(target=monitor._setTimer, args=(lambda x: print("signal triggered", 0.5)))
+    # thread.start()
+    
     
     
     
