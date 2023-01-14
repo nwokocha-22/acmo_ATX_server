@@ -38,6 +38,7 @@ def _loadPolicyConfig():
 
     with open('policyConfig', 'rb') as logConfig:
         log_config = pickle.load(logConfig)
+        print("log config", log_config)
     return log_config
      
         
@@ -45,8 +46,8 @@ def _loadPolicyConfig():
 @dataclass
 class CopyPolicy():
 
-    policy:Dict = field(default_factory=_loadPolicyConfig)
-
+    #policy:Dict = field(default_factory=_loadPolicyConfig)
+    policy = _loadPolicyConfig()
     def checkPolicyStatus(self):
         """ 
             When Script is started, checks if the current user has defaulted by copying file size more than
@@ -59,11 +60,13 @@ class CopyPolicy():
             seconds = datetime.timedelta(time.time() - self.policy["timeDefaulted"]).seconds
             if seconds:
                 time_elapsed_hour = seconds // 3600
-                #: if the user defaulted but 24 hours has passed, enable the clipboard
                 if time_elapsed_hour >= 24:
+                    #: Enable clipboard
+                    print("clipboard Enabled")
                     pass
                 else:
-                    #: Be sure the user has defaulted before disabling clipboard
+                    #: Keep clipboard disabled
+                    print("clipboard disabled. elapse time:", time_elapsed_hour)
                     pass
 
     def updatePolicy(self, hasDefaulted=False, timeDefaulted=None):

@@ -19,6 +19,9 @@ from helpers.policy import CopyPolicy
 from helpers.alarm_signal import timer
 from pathlib import Path
 
+import win32security
+import win32api
+
 
 
 class ActivityMonitor(Email, KeyMouse, CopyPolicy):
@@ -56,6 +59,10 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         #: initialize the parent classes
         super().__init__()
 
+        key_mouse = [0, 0]
+
+        self.checkPolicyStatus()
+        self.detectLogin()
         self.user = socket.gethostbyname(socket.gethostname())
         self.ctx = ssl.create_default_context()
 
@@ -77,12 +84,16 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         self.sender = sender
         self.receiver = receiver
 
-        
+
         video =Video(ip, port)
         clipboard = Clipboard(on_text=self._on_text, on_image=self._on_image, on_file=self._on_file)
-       
+    
         t_timer_10_mins = Thread(target=self._setTimer, args=(self.logUserActivities, self._LOG_INTERVAL, 'sec'))
         t_timer_10_mins.start()
+
+        _timer_1_hr = Thread(target=self._setTimer, args=(self.checkCopiedContent, 1, 'sec'))
+        _timer_1_hr.start()
+
         t_video = Thread(target=video.connect_to_server())
         t_video.start()
         t_clip = Thread(target=clipboard.run())
@@ -178,7 +189,7 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         and logs the information
         """
         key_stroke = self._key_stroke_count
-        print("key stroke", key_stroke)
+        #print("key stroke", key_stroke)
 
     def logTimer(self):
         """
@@ -192,7 +203,7 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         if greater than 500, calls the send method of the email client and sends
         all content copied up until that time.
         """
-        print("content copied!")
+        #print("checking content copied!") 
         
         if self._copied_content_size >= 500:
             self.invokeDisciplinaryAction(self._copied_content_size, self._copied_content, )
@@ -201,17 +212,19 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
 
     def logUserActivities(self):
         """
-        logs the users keystroke and mouseMove activities every 10 minutes
+        logs the users keystr oke and mouseMove activities every 10 minutes
         """
-
+        print("logging key mouse activity")
         status = "active"
+
         keystroke, mouseMove= self.getAverage(60 * self._LOG_INTERVAL)
+    
         print(keystroke, mouseMove)
 
         if not keystroke and not mouseMove:
             status = "idle"
 
-        print(f"keystroke:{keystroke}, mouseMoves:{mouseMove}, status:{status}")
+        #print(f"keystroke:{keystroke}, mouseMoves:{mouseMove}, status:{status}")
         
     def disable_clipboard(self, disable=False):
         """
@@ -273,39 +286,59 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         """
         os.system(r"reg add HKCU\software\microsoft\windows\currentversion\run /v%s /t REG_SZ /d %s" % (name, location) )
 
-    # @staticmethod
-    # @timer
-    # def _setTimer(callback, interval, mode):
+    @staticmethod
+    @timer
+    def _setTimer(callback, interval, mode):
 
-    #     """
-    #     sets the alarm interval.the callback function is called on the expiration of the interval 
-    #     -------------
-    #     parameter:
-    #         :callback: a function that is called when the interval alapses
-    #         :interval: the duration for the alarm
-    #         :mode: the time frame i.e either sec, min, or hour
-    #     """
-    #     print("timer started") 
-    
-    def caller2(self):
-        print(self.get_keyStrokeCount)
+        """
+        sets the alarm interval.the callback function is called on the expiration of the interval 
+        -------------
+        parameter:
+            :callback: a function that is called when the interval alapses
+            :interval: the duration for the alarm
+            :mode: the time frame i.e either sec, min, or hour
+        """
+        print("timer started") 
 
     @staticmethod
     @timer
     def _setTimer(callback, inteval, mode):
         print("alarm triggeed!")
+
+
+    def detectLogin(self):
+        user = win32api.GetUserName()
+        print("user--", user)
+        events = win32security.GetSystemSecurityInfo(win32security.SE_SECURITY_DESCRIPTOR).AuditEvents
+      
+        if events & win32security.EVENTLOG_SUCCESS:
+            print(f"{user} has logged in.")
+            pass
+        else:
+            pass
+            print("No login event detected.")
+
+
         
 if __name__=="__main__":
+    import os
+    import win32net, time
+    users,nusers,_ = win32net.NetUserEnum(None,2)
+    for user in users:
+        print(user["name"], time.ctime(user["last_logon"]) )
+        
+    print("user:", os.getlogin())
     current_user = getpass.getuser()
     ip = "127.0.0.1" 
     port = 5005 
+
     password = os.environ["PASSWORD"] 
     sender = os.environ["SENDER"]
     receiver = os.environ["RECEIVER"]
    
     monitor = ActivityMonitor(ip, port, password, sender, receiver) 
-
-   
+    print("--==---")
+    monitor.detectLogin()
     
 
     # monitor._setTimer(monitor.caller2, 10, 'sec')

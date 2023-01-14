@@ -23,6 +23,7 @@ class MouseActivity:
     @staticmethod
     def on_move(x, y):
         MouseActivity._mouse_move_count += 1
+        #print("mouse count", MouseActivity._mouse_move_count)
 
     def mouseMonitor(self):
         """
@@ -32,7 +33,7 @@ class MouseActivity:
             mouseMonitor.join()
 
 @dataclass
-class KeyboardActivity:
+class KeyboardActivity: 
 
     _key_stroke_count: int = field(repr = False, default = 0) 
     
@@ -44,7 +45,8 @@ class KeyboardActivity:
     def on_press(key):
         print(key)
         KeyboardActivity._key_stroke_count += 1
-        
+        #print("key count",KeyboardActivity._key_stroke_count)
+
     @staticmethod
     def on_release(key):
         if key == keyboard.Key.esc: 
@@ -73,13 +75,13 @@ class KeyMouseMonitor(KeyboardActivity, MouseActivity):
     def get_keyStrokeCount(self):
         return self._key_stroke_count
 
-    @get_mouseCount.setter
-    def mouseCount(self, value):
-        self._mouse_move_count = value
+    # @get_mouseCount.setter
+    # def mouseCount(self, value):
+    #     self._mouse_move_count = value
 
-    @get_keyStrokeCount.setter
-    def keyStrokeCount(self, value):
-        self._key_stroke_count = value
+    # @get_keyStrokeCount.setter
+    # def keyStrokeCount(self, value):
+    #     self._key_stroke_count = value
 
     def getAverage(self, time=60):
         """ 
@@ -92,14 +94,17 @@ class KeyMouseMonitor(KeyboardActivity, MouseActivity):
             :avrg_KeyStroke: average key stroke per minute
             :avrg_mouseMove: average mouse move per minute
         """
+        print("key average called")
         key_stroke = self.get_keyStrokeCount
         mouse_move = self.get_mouseCount
 
         # avrg_keyStroke = key_stroke // time
         # avrg_mouseMove = mouse_move // time
 
-        self.keyStrokeCount = 0
-        self.mouseCount = 0
+        # self.keyStrokeCount = 0
+        # self.mouseCount = 0
+        self._key_stroke_count = 0
+        self._mouse_move_count = 0
 
         #return avrg_keyStroke, avrg_mouseMove
         return key_stroke, mouse_move
@@ -122,5 +127,3 @@ if __name__=="__main__":
 
 
     #monitor._setTimer(monitor.caller2, 10, 'sec')
-
-    timer(callback, 2, 'sec')
