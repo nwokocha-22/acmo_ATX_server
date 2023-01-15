@@ -62,7 +62,7 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         key_mouse = [0, 0]
 
         self.checkPolicyStatus()
-        self.detectLogin()
+        #self.detectLogin()
         self.user = socket.gethostbyname(socket.gethostname())
         self.ctx = ssl.create_default_context()
 
@@ -84,8 +84,11 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         self.sender = sender
         self.receiver = receiver
 
-
-        video =Video(ip, port)
+    def start(self):
+        """
+        begin the monitoring processes -> Clipboard, Video, key and mouse
+        """
+        video =Video(self.ip, self.port)
         clipboard = Clipboard(on_text=self._on_text, on_image=self._on_image, on_file=self._on_file)
     
         t_timer_10_mins = Thread(target=self._setTimer, args=(self.logUserActivities, self._LOG_INTERVAL, 'sec'))
@@ -102,7 +105,6 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         t_timer_10_mins.join()
         t_video.join()
         t_clip.join() 
-
 
     def _on_text(self, text:str):
         """
@@ -306,29 +308,30 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         print("alarm triggeed!")
 
 
-    def detectLogin(self):
-        user = win32api.GetUserName()
-        print("user--", user)
-        events = win32security.GetSystemSecurityInfo(win32security.SE_SECURITY_DESCRIPTOR).AuditEvents
+    # def detectLogin(self):
+    #     user = win32api.GetUserName()
+    #     print("user--", user)
+    #     events = win32security.GetSystemSecurityInfo(win32security.SE_SECURITY_DESCRIPTOR).AuditEvents
       
-        if events & win32security.EVENTLOG_SUCCESS:
-            print(f"{user} has logged in.")
-            pass
-        else:
-            pass
-            print("No login event detected.")
+    #     if events & win32security.EVENTLOG_SUCCESS:
+    #         print(f"{user} has logged in.")
+    #         pass
+    #     else:
+    #         pass
+    #         print("No login event detected.")
 
 
         
 if __name__=="__main__":
     import os
-    import win32net, time
-    users,nusers,_ = win32net.NetUserEnum(None,2)
-    for user in users:
-        print(user["name"], time.ctime(user["last_logon"]) )
+    # import win32net, time
+    # users,nusers,_ = win32net.NetUserEnum(None,2)
+    # for user in users:
+    #     print(user["name"], time.ctime(user["last_logon"]) )
         
-    print("user:", os.getlogin())
-    current_user = getpass.getuser()
+    # print("user:", os.getlogin())
+    # current_user = getpass.getuser()
+
     ip = "127.0.0.1" 
     port = 5005 
 
@@ -337,11 +340,8 @@ if __name__=="__main__":
     receiver = os.environ["RECEIVER"]
    
     monitor = ActivityMonitor(ip, port, password, sender, receiver) 
-    print("--==---")
-    monitor.detectLogin()
-    
 
-    # monitor._setTimer(monitor.caller2, 10, 'sec')
+    monitor._setTimer(monitor.caller2, 10, 'sec')
     
     
 

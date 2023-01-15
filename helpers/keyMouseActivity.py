@@ -2,9 +2,7 @@
 from dataclasses import dataclass, field
 from pynput import keyboard, mouse
 from threading import Thread
-import time
-from statistics import mean
-#from alarm_signal import timer
+
 
 @dataclass
 class MouseActivity:
@@ -35,7 +33,7 @@ class MouseActivity:
 @dataclass
 class KeyboardActivity: 
 
-    _key_stroke_count: int = field(repr = False, default = 0) 
+    _key_stroke_count: int = field(default = 0) 
     
     def __init__(self):
         k = Thread(target = self.keyMonitor)
@@ -75,13 +73,13 @@ class KeyMouseMonitor(KeyboardActivity, MouseActivity):
     def get_keyStrokeCount(self):
         return self._key_stroke_count
 
-    # @get_mouseCount.setter
-    # def mouseCount(self, value):
-    #     self._mouse_move_count = value
+    @get_mouseCount.setter
+    def mouseCount(self, value):
+        self._mouse_move_count = value
 
-    # @get_keyStrokeCount.setter
-    # def keyStrokeCount(self, value):
-    #     self._key_stroke_count = value
+    @get_keyStrokeCount.setter
+    def keyStrokeCount(self, value):
+        self._key_stroke_count = value
 
     def getAverage(self, time=60):
         """ 
@@ -109,8 +107,7 @@ class KeyMouseMonitor(KeyboardActivity, MouseActivity):
         #return avrg_keyStroke, avrg_mouseMove
         return key_stroke, mouse_move
 
-    def caller2(self):
-        print(self.get_keyStrokeCount)
+    
 
     # @staticmethod
     # @timer
