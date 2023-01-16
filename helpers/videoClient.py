@@ -11,8 +11,8 @@ class SendVideo:
 
     BUFFER = 1024 * 1024
 
-    def __init__(self, ip, port):
-        super().__init__()
+    def __init__(self, ip, port, password, sender, receiver):
+        super().__init__(password, sender, receiver)
        
         self.address = (ip, port)
         self.queue = queue.Queue(20)

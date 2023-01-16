@@ -24,7 +24,7 @@ import win32api
 
 
 
-class ActivityMonitor(Email, KeyMouse, CopyPolicy):
+class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
     """
     This script continously monitors user's activity by capturing video 
     of the user's screen, mouse and keyboard activities, and the content copied to clipboard.
@@ -57,17 +57,17 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
     def __init__(self, ip, port, password, sender, receiver):
 
         #: initialize the parent classes
-        super().__init__()
+        super().__init__(self._on_text, self._on_image, self._on_file, ip, port, password, sender, receiver)
 
         key_mouse = [0, 0]
 
         self.checkPolicyStatus()
         #self.detectLogin()
-        self.user = socket.gethostbyname(socket.gethostname())
+        #self.user = socket.gethostbyname(socket.gethostname())
         self.ctx = ssl.create_default_context()
 
-        self._copied_content_size = int()
-        self._copied_content = str()
+        # self._copied_content_size = int()
+        # self._copied_content = str()
 
         #: when the user is logged in
         self._time_in = datetime.now().strftime("%d-%m-%Y, %H:%M:%S")
@@ -113,6 +113,7 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         #: check size of the copied content
         print("text copied")
         text_size = sys.getsizeof(text)
+        print("file size:", text_size)
         self.invokeCopyPolicy(text_size, text, "text")
 
     def getSize_ZippedFiles(self, files):
@@ -150,7 +151,7 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         image_size = sys.getsizeof(image)
         self.invokeCopyPolicy(image_size, image, "image")
 
-    def invokeCopyPolicy(self, file_size, file, type):
+    def invokeCopyPolicy(self, file_size, file, file_type):
         """
         Checks if the size of the copied file is more than five hundred. 
         if yes, invokes a disciplinary action
@@ -161,14 +162,16 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         -----------------
         return: None
         """
-        if type == "text":
+        print("policy invoked")
+        if file_type == "text":
             if file_size >= 500:
-                self.invokeDisciplinaryAction(self.user, file_size, file, type)
+                print("file size geater than 500")
+                self.invokeDisciplinaryAction(file_size, file, file_type)
 
             elif file_size + self._copied_content_size >= 500:
                 updated_size = file_size + self._copied_content_size
                 updated_content = file + self._copied_content
-                self.invokeDisciplinaryAction(self.user, updated_size, updated_content, type)
+                self.invokeDisciplinaryAction(updated_size, updated_content, file_type)
 
             else:
                 self.updateCopiedContent(file, file_size)
@@ -208,7 +211,7 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         #print("checking content copied!") 
         
         if self._copied_content_size >= 500:
-            self.invokeDisciplinaryAction(self._copied_content_size, self._copied_content, )
+            self.invokeDisciplinaryAction(self._copied_content_size, self._copied_content, "text")
         else:
             self.updateCopiedContent(clear=True)
 
@@ -235,12 +238,13 @@ class ActivityMonitor(Email, KeyMouse, CopyPolicy):
         print("keyboard is disabled; can't copy file")
         
 
-    def invokeDisciplinaryAction(self, file_size, file, file_type=None):
+    def invokeDisciplinaryAction(self, file_size, file, file_type):
         """
         This is called when the copy policy is violiated. It sets the users hasDefaulted status
         to True, set the time of violation, and triggers the function to disable clipboard
         for 24hours
         """
+        print("deciplinary actiion invoked!")
         time = datetime.now().strftime("%d-%m-%Y - %H:%M:%S")
 
         self.updatePolicy(hasDefaulted=True, timeDefaulted=time)
@@ -341,7 +345,7 @@ if __name__=="__main__":
    
     monitor = ActivityMonitor(ip, port, password, sender, receiver) 
 
-    monitor._setTimer(monitor.caller2, 10, 'sec')
+    #monitor._setTimer(monitor.caller2, 10, 'sec')
     
     
 

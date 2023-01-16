@@ -2,8 +2,6 @@ import smtplib
 
 import ssl
 
-
-
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -12,7 +10,13 @@ from datetime import datetime
 
 class EmailClient:
 
-    def __init__(self) -> None:
+    def __init__(self, password, sender, receiver) -> None:
+
+        self.password = password
+        self.sender = sender
+        self.receiver = receiver
+        self.ctx = ssl.create_default_context()
+
         super().__init__()
         
         print("email thread started")
@@ -41,7 +45,7 @@ class EmailClient:
                             File Size:
                             <b><u><i>{file_size} KB</i></u></b>
                         </h2>
-                        <h4> Content </h4>
+                        <h4>Copied Content</h4>
                         <p>
                             {content}
                         </p>
@@ -95,4 +99,4 @@ class EmailClient:
             server.login(self.sender, self.password)
             server.sendmail(self.sender, self.receiver, message.as_string())
 
-
+        print("email sent successfully!")

