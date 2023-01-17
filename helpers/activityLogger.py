@@ -12,7 +12,7 @@ logFileFormatter = logging.Formatter(
     fmt=f"%(levelname)s %(asctime)s -\t%(filename)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-
+ 
 #: FILE HANDLER
 fileHandler = logging.FileHandler(filename='activityLog.log')
 fileHandler.setFormatter(logFileFormatter)

@@ -5,7 +5,7 @@ import logging, logging.handlers
 
 class LogRequestHandler(socketserver.StreamRequestHandler):
 
-    def handleRequest(self):
+    def handle(self):
         """
         handle incoming request to the server. calls the loadData function 
         loads the pickled data and records the log
@@ -13,6 +13,7 @@ class LogRequestHandler(socketserver.StreamRequestHandler):
         """
         while True:
             data = self.connection.recv(4)
+            print("data:",  data)
             if len(data) < 4:
                 break
             slen = struct.unpack('>L', data)[0]
@@ -21,6 +22,7 @@ class LogRequestHandler(socketserver.StreamRequestHandler):
                 data = data + self.connection.recv(slen - len(data))
             pickle_obj = self.loadData(data)
             record = logging.makeLogRecord(pickle_obj)
+            print("log record:", record)
             self.recordLog(record)
 
     def loadData(self, data):
@@ -35,6 +37,7 @@ class LogRequestHandler(socketserver.StreamRequestHandler):
         """
         if self.server.logname is not None:
             log_name = self.server.logname
+            print("log name:", log_name)
         else:
             log_name = record.name
 
@@ -53,17 +56,19 @@ class LogReceiver(socketserver.ThreadingTCPServer):
         self, host='localhost', 
         port=logging.handlers.DEFAULT_TCP_LOGGING_PORT, 
         handler=LogRequestHandler):
-
+        print(host, port)
         socketserver.ThreadingTCPServer.__init__(self, (host, port), handler)
         self.abort = 0
         self.timeout = 1
         self.logname = None
 
     def serve_until_stopped(self):
+        print("serving")
         import select
         abort = 0
         while not abort:
             rd, wr, ex = select.select([self.socket.fileno()], [], [], self.timeout)
+            print("--rd", rd)
             if rd:
                 self.handle_request()
             abort = self.abort

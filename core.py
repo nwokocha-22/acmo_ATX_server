@@ -242,7 +242,7 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         
         print("activity logged")
     
-        message = f"keystroke:{k} WPM, mouseMoves:{m}, copied file size: {self._copied_content_size}, status:{status}"
+        message = f"keystroke:{keystroke}, mouseMoves:{mouseMove}, copied file size: {self._copied_content_size}, status:{status}"
         activityLogger.info(message)
 
     def disable_clipboard(self, disable=False):

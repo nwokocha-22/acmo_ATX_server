@@ -43,46 +43,47 @@
 #: This precedes event ID 22: which indicates the Source Network Address: Local means the loging is not 
 # remote RDP logon event.
 
-# import win32evtlog
-# import win32event
-# import win32api
-# import socket
+import win32evtlog
+import win32event
+import win32api
+import socket
 
-# server =  socket.gethostbyname(socket.gethostname())# replace with the name of your server
-# log_type = 'Security'
-# #log_type = 'System'
+server =  socket.gethostbyname(socket.gethostname())# replace with the name of your server
+log_type = 'Security'
+#log_type = 'System'
 
-# # Open a handle to the event log
-# handle = win32evtlog.OpenEventLog(server,log_type)
+# Open a handle to the event log
+handle = win32evtlog.OpenEventLog(server, log_type)
 
-# # Register for notifications of new events
-# #notify = win32evtlog.NotifyChangeEventLog(handle, win32event.CreateEvent(None, 0, 0, None))
-# notify = win32evtlog.NotifyChangeEventLog(handle, win32event.WaitForSingleObject)
-# print(notify)
-# while True:
-#     # Wait for a new event
-#     events = win32evtlog.ReadEventLog(handle, win32evtlog.EVENTLOG_SEQUENTIAL_READ | win32evtlog.EVENTLOG_FORWARDS_READ, 0)
-#     #print("event methods", dir(events))
+# Register for notifications of new events
+#notify = win32evtlog.NotifyChangeEventLog(handle, win32event.CreateEvent(None, 0, 0, None))
+#notify = win32evtlog.NotifyChangeEventLog(handle, win32event.WaitForSingleObject)
+
+while True:
+    # Wait for a new event
+    events = win32evtlog.ReadEventLog(handle, win32evtlog.EVENTLOG_SEQUENTIAL_READ | win32evtlog.EVENTLOG_FORWARDS_READ, 0)
+    #print("event methods", dir(events))
     
-#     for event in events:
-#         # Check if the event is a RDP logon event
-#         print("Events attributes", dir(event))
-#         if event.EventType == win32evtlog.EVENTLOG_AUDIT_SUCCESS and event.EventID == 4624:
-#             print('RDP logon event found:')
-#             print('User:', event.StringInserts)
-#             print("Computer name", event.ComputerName)
-#             print("eventType", event.EventType)
-#             print("")
-#             print('Time:', event.TimeGenerated)
-#             pass
+    for event in events:
+        # Check if the event is a RDP logon event
+       
+        if event.EventType == win32evtlog.EVENTLOG_AUDIT_SUCCESS and event.EventID == 4624:
+            #if event.EventType == 10:
+            print('RDP logon event found:')
+            print('User:', event.StringInserts)
+            print("Computer name", event.ComputerName)
+            print("eventType", event.EventType)
+            print("")
+            print('Time:', event.TimeGenerated)
+            pass
 
-#         elif event.EventID == 21:
-#             print("log out:", event.TimeGenerated)
+        elif event.EventType == win32evtlog.EVENTLOG_AUDIT_FAILURE and event.EventID == 4634:
+            print("log out:", event.TimeGenerated)
 
-#         elif event.EventID == 24:
-#             print("Session Disconnected")
+        elif event.EventID == 24:
+            print("Session Disconnected")
 
-# win32evtlog.CloseEventLog(handle)
+win32evtlog.CloseEventLog(handle)
 
 #: prevent application from running
 

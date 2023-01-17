@@ -14,10 +14,14 @@ logging.info('Jackdaws love my big sphinx of quartz.')
 # Now, define a couple of other loggers which might represent areas in your
 # application:
 
-logger1 = logging.getLogger('myapp.area1')
-logger2 = logging.getLogger('myapp.area2')
+keyMouseActivity = logging.getLogger('KeyMouse')
+clipboardActivity = logging.getLogger('Clipboard')
 
-logger1.debug('Quick zephyrs blow, vexing daft Jim.')
-logger1.info('How quickly daft jumping zebras vex.')
-logger2.warning('Jail zesty vixen who grabbed pay from quack.')
-logger2.error('The five boxing wizards jump quickly.')
+status = 'active'
+message = f"keystroke:{102}, mouseMoves:{390}, copied file size: {20}, status:{status}"
+
+keyMouseActivity.debug(message)
+keyMouseActivity.info(message)
+
+clipboardActivity.warning(message)
+clipboardActivity.error(message)

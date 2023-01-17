@@ -48,8 +48,10 @@ Helpful commands:
 #: STEP 3: START YOUR EXECUATABLE
 #: yourexefile.exe start
 
+# HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\
+
 class ActivityMonitorService(win32serviceutil.ServiceFramework):
-    
+
     _svc_name_ = "ActivyMonitorService"
     _svc_display_name_ = "Activity Monitor Service"
     _svc_description_ = "Starts the activity monitor script when a user is log in"
@@ -76,4 +78,9 @@ class ActivityMonitorService(win32serviceutil.ServiceFramework):
             self.process.terminate()
 
 if __name__ == '__main__':
-    win32serviceutil.HandleCommandLine(ActivityMonitorService)
+    import os
+    try:
+        win32serviceutil.HandleCommandLine(ActivityMonitorService)
+    except SystemExit:
+        os._exit(1)
+    

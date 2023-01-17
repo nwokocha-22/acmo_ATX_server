@@ -57,7 +57,7 @@ class ActivityMonitorService(win32serviceutil.ServiceFramework):
         #self.start()
         #: Listen for Windows Logon Event
         #: Start the script when there is a logon
-        win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
+        #win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
         win32event.WaitForMultipleObjects((self.logon_event, self.logoff_event), win32event.INFINITE)
 
         #: wait for logon and logoff window events.

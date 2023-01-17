@@ -26,31 +26,34 @@ class LogonLogoffService(win32serviceutil.ServiceFramework):
         """
         # Report service status as running
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+
         # Log service start event
-        win32evtlogutil.ReportEvent(self._svc_name_,
-                                    win32evtlog.EVENTLOG_INFORMATION_TYPE,
-                                    0, # eventCategory
-                                    win32service.SERVICE_STARTED, # eventID
-                                    None, # userSid
-                                    [self._svc_name_], # strings
-                                    None) # data
+        win32evtlogutil.ReportEvent(\
+            self._svc_name_,
+            win32evtlog.EVENTLOG_INFORMATION_TYPE,
+            0, # eventCategory
+            win32service.SERVICE_STARTED, # eventID
+            None, # userSid
+            [self._svc_name_], # strings
+            None) # data
+
         # Continuously listen for logon and logoff events
         while 1:
             # Check for service stop event
             rc = win32event.WaitForSingleObject(self.hWaitStop, win32event.INFINITE)
             if rc == win32event.WAIT_OBJECT_0:
                 # Log service stop event
-                win32evtlogutil.ReportEvent(self._svc_name_,
-                                    win32evtlog.EVENTLOG_INFORMATION_TYPE,
-                                    0, # eventCategory
-                                    win32service.SERVICE_STOPPED, # eventID
-                                    None, # userSid
-                                    [self._svc_name_], # strings
-                                    None) # data
+                win32evtlogutil.ReportEvent(\
+                    self._svc_name_,
+                    win32evtlog.EVENTLOG_INFORMATION_TYPE,
+                    0, # eventCategory
+                    win32service.SERVICE_STOPPED, # eventID
+                    None, # userSid
+                    [self._svc_name_], # strings
+                    None) # data
                 break
             # Open the Security event log in real-time
             event_log = "Security"
-            event_source = None
             h = win32evtlog.OpenEventLog(None, event_log)
             flags = win32evtlog.EVENTLOG_FORWARDS_READ|win32evtlog.EVENTLOG_SEEK_READ
             last_record = win32evtlog.GetNumberOfEventLogRecords(h)
