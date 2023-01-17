@@ -16,11 +16,12 @@ class MouseActivity:
     @staticmethod
     def on_click(x, y, button, pressed):
         MouseActivity._mouse_move_count += 1
+    
 
     @staticmethod
     def on_move(x, y):
         MouseActivity._mouse_move_count += 1
-        #print("mouse count", MouseActivity._mouse_move_count)
+        print("mouse count", MouseActivity._mouse_move_count)
 
     def mouseMonitor(self):
         """
@@ -41,7 +42,7 @@ class KeyboardActivity:
     @staticmethod
     def on_press(key):
         KeyboardActivity._key_stroke_count += 1
-        #print("key count",KeyboardActivity._key_stroke_count)
+        print("key count",KeyboardActivity._key_stroke_count)
 
     @staticmethod
     def on_release(key):

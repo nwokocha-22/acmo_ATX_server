@@ -1,7 +1,8 @@
 import time
 import pickle
 from pathlib import Path
-from datetime import datetime
+from datetime import timedelta
+import time
 from dataclasses import dataclass, field
 from typing import Dict
 
@@ -48,6 +49,7 @@ class CopyPolicy():
 
     #policy:Dict = field(default_factory=_loadPolicyConfig)
     policy = _loadPolicyConfig()
+
     def checkPolicyStatus(self):
         """ 
             When Script is started, checks if the current user has defaulted by copying file size more than
@@ -57,7 +59,10 @@ class CopyPolicy():
         """
        
         if self.policy["hasDefaulted"]:
-            seconds = datetime.timedelta(time.time() - self.policy["timeDefaulted"]).seconds
+            default_time = self.policy["timeDefaulted"]
+            current_time = time.time()
+            print(default_time, current_time)
+            seconds = timedelta(time.time() - self.policy["timeDefaulted"]).seconds
             if seconds:
                 time_elapsed_hour = seconds // 3600
                 if time_elapsed_hour >= 24:
@@ -68,16 +73,18 @@ class CopyPolicy():
                     #: Keep clipboard disabled
                     print("clipboard disabled. elapse time:", time_elapsed_hour)
                     pass
+        pass
 
     def updatePolicy(self, hasDefaulted=False, timeDefaulted=None):
         """
-        updates the copyPolicy loaded on script startup
+        updates the copy policy
         """
-        policy = {**self.policy, 'hasDefaulted':hasDefaulted, 'timeDefaulted': timeDefaulted}
+        self.policy = {**self.policy, 'hasDefaulted':hasDefaulted, 'timeDefaulted': timeDefaulted}
+        
         with open('policyConfig', 'wb') as config:
-            pickle.dump(policy, config)
+            pickle.dump(self.policy, config)
        
-
+        print("policy:", self.policy)
 # if __name__=="__main__":
 #     from datetime import datetime
 #     date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")

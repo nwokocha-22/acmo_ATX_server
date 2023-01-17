@@ -79,7 +79,7 @@ class EmailClient:
         print("file sending..", user, file_size, content, attachment)
 
         message = MIMEMultipart("alternative")
-        message["Subject"] = f"Suspicious Activity Detected - Server: {user}"
+        message["Subject"] = "Suspicious Activity Detected"
         message["From"] = self.sender
         message["To"] = self.receiver
 

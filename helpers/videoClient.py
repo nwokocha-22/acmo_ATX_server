@@ -12,11 +12,12 @@ class SendVideo:
     BUFFER = 1024 * 1024
 
     def __init__(self, ip, port, password, sender, receiver):
+        
         super().__init__(password, sender, receiver)
        
         self.address = (ip, port)
         self.queue = queue.Queue(20)
-        print("video thread started")
+        #self.connect_to_server()
 
     
     def send_data(self):
@@ -41,6 +42,7 @@ class SendVideo:
         establishes a three way hand shake with the clients, and spawn a thread to send data
         to the connect client
         """
+        print("connecting to server...")
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
                 connected = False

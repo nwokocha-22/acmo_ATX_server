@@ -7,9 +7,15 @@ import win32gui
 import  win32api
 import ctypes
 import socket
+from threading import Thread
+from helpers.policy import CopyPolicy
    
 
 class ClipboardMonitor:
+
+    """
+    Extends the copy policy class and monitors the clipboard
+    """
 
     hasDefaulted = True
 
@@ -31,10 +37,12 @@ class ClipboardMonitor:
         self._copied_content_size = int()
         self._copied_content = str()
 
+        #CopyPolicy.__init__(self)
         super().__init__(ip, port, password, sender, receiver)
-
+        
         print("clipboard thread started..")
-        self.run()
+        
+        #self.run()
     
     
     def _create_base_window(self) -> int:
@@ -53,12 +61,14 @@ class ClipboardMonitor:
     def _handler():
         print("handler")
 
-    def run(self):
+    def run_clipboard_listener(self):
         print("Clipthread started!")
 
         hwnd = self._create_base_window()
         ctypes.windll.user32.AddClipboardFormatListener(hwnd)
         win32gui.PumpMessages()
+        input()
+       
            
     def _handle_message_from_clipboard(self, hwnd: int, msg: int, wparam: int, lparam: int):
         WM_CLIPBOARDUPDATE = 0x031D
