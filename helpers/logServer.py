@@ -1,83 +1,95 @@
 import pickle
+import logging
+import logging.handlers
 import socketserver
 import struct
-import logging, logging.handlers
 
-class LogRequestHandler(socketserver.StreamRequestHandler):
+
+class LogRecordStreamHandler(socketserver.StreamRequestHandler):
+    """Handler for a streaming logging request.
+
+    This basically logs the record using whatever logging policy is
+    configured locally.
+    """
 
     def handle(self):
         """
-        handle incoming request to the server. calls the loadData function 
-        loads the pickled data and records the log
-
+        Handle multiple requests - each expected to be a 4-byte length,
+        followed by the LogRecord in pickle format. Logs the record
+        according to whatever policy is configured locally.
         """
         while True:
-            data = self.connection.recv(4)
-            print("data:",  data)
-            if len(data) < 4:
+            chunk = self.connection.recv(4)
+            if len(chunk) < 4:
                 break
-            slen = struct.unpack('>L', data)[0]
-            data = self.connection.recv(slen)
-            while len(data) < slen:
-                data = data + self.connection.recv(slen - len(data))
-            pickle_obj = self.loadData(data)
-            record = logging.makeLogRecord(pickle_obj)
-            print("log record:", record)
-            self.recordLog(record)
+            slen = struct.unpack('>L', chunk)[0]
+            chunk = self.connection.recv(slen)
+            while len(chunk) < slen:
+                chunk = chunk + self.connection.recv(slen - len(chunk))
+            obj = self.unPickle(chunk)
+            record = logging.makeLogRecord(obj)
+            self.handleLogRecord(record)
 
-    def loadData(self, data):
-        """
-        Loads the received pickled object
-        """
+    def unPickle(self, data):
         return pickle.loads(data)
 
-    def recordLog(self, record):
-        """
-        Records the received log
-        """
+    def handleLogRecord(self, record):
+        # if a name is specified, we use the named logger rather than the one
+        # implied by the record.
         if self.server.logname is not None:
-            log_name = self.server.logname
-            print("log name:", log_name)
+            name = self.server.logname
         else:
-            log_name = record.name
-
-        logger= logging.getLogger(log_name)
+            name = record.name
+        logger = logging.getLogger(name)
+        # N.B. EVERY record gets logged. This is because Logger.handle
+        # is normally called AFTER logger-level filtering. If you want
+        # to do filtering, do it at the client end to save wasting
+        # cycles and network bandwidth!
+        fileHandler = logging.FileHandler(filename='socketLog.log')
+        logFileFormatter = logging.Formatter(
+            fmt=f"%(levelname)s %(asctime)s -\t%(name)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        fileHandler.setFormatter(logFileFormatter)
+        logger.addHandler(fileHandler)
         logger.handle(record)
 
-class LogReceiver(socketserver.ThreadingTCPServer):
+class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
     """
     Simple TCP socket-based logging receiver suitable for testing.
     """
 
-    reuse_address = True
+    allow_reuse_address = True
 
-    def __init__(\
+    def __init__(self, host='localhost',
+                 port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 handler=LogRecordStreamHandler):
 
-        self, host='localhost', 
-        port=logging.handlers.DEFAULT_TCP_LOGGING_PORT, 
-        handler=LogRequestHandler):
-        print(host, port)
         socketserver.ThreadingTCPServer.__init__(self, (host, port), handler)
         self.abort = 0
         self.timeout = 1
         self.logname = None
 
     def serve_until_stopped(self):
-        print("serving")
         import select
         abort = 0
         while not abort:
-            rd, wr, ex = select.select([self.socket.fileno()], [], [], self.timeout)
-            print("--rd", rd)
+            rd, wr, ex = select.select([self.socket.fileno()],
+                                       [], [],
+                                       self.timeout)
             if rd:
                 self.handle_request()
             abort = self.abort
 
-def main():
-    logging.basicConfig(format='%(relativeCreated)5d %(name)-15s %(levelname)-8s %(message)s')
-    tcpserver = LogReceiver()
-    print('About to start TCP server...')
-    tcpserver.serve_until_stopped()
+# def main():
+#     # logging.basicConfig(
+#     #     format='%(asctime)s - %(name)-15s %(levelname)-8s %(message)s',
+#     #     datefmt="%Y-%m-%d %H:%M:%S",)
+#     tcpserver = LogRecordSocketReceiver()
+#     print('About to start TCP server...')
+#     tcpserver.serve_until_stopped()
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
+
+   

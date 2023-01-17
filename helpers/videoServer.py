@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime
 from pathlib import Path
 import os
+from logServer import LogRecordSocketReceiver
 
 
 class ReceiveVideo:
@@ -171,7 +172,13 @@ if __name__=="__main__":
 	IP = "127.0.0.1"
 	print("IP", IP)
 	PORT = 5005
+	
+	log_tcpserver = LogRecordSocketReceiver()
+	print('About to start TCP server...')
+	log_tcpserver.serve_until_stopped()
+
+	print("starting video ")
 	video_server = ReceiveVideo(IP, PORT)
 	video_server.connect()
-	#video_server.connect()
+
 		
