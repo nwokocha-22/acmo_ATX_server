@@ -3,15 +3,13 @@ import logging
 import logging.handlers
 import socketserver
 import struct
+from datetime import datetime
+from pathlib import Path, PurePosixPath
+import os
 
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
-    """Handler for a streaming logging request.
-
-    This basically logs the record using whatever logging policy is
-    configured locally.
-    """
-
+  
     def handle(self):
         """
         Handle multiple requests - each expected to be a 4-byte length,
@@ -28,24 +26,55 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
                 chunk = chunk + self.connection.recv(slen - len(chunk))
             obj = self.unPickle(chunk)
             record = logging.makeLogRecord(obj)
-            self.handleLogRecord(record)
+            self.logRecord(record)
 
     def unPickle(self, data):
         return pickle.loads(data)
 
-    def handleLogRecord(self, record):
+    def create_dir(self, client_ip):
+        """
+        constructs a path where the log file is saved
+        """
+        date = datetime.now()
+        root_folder = Path("C:/Activity Monitor")
+        try:
+            path = Path.joinpath(root_folder, client_ip, f"{date.month}")
+            if path.exists():
+                return path
+            else:
+                os.makedirs(path)
+                return path
+        except FileNotFoundError as err:
+            print(err)
+
+    def logRecord(self, record):
         # if a name is specified, we use the named logger rather than the one
         # implied by the record.
+        print("record made")
+        client_ip =  self.server.server_address[0]
+        #path = self.create_dir(client_ip)
+        path = Path.cwd()/"Log"/client_ip/"activityLogs"
+        print("path:", path)
+        
+        #
+        date = datetime.today().strftime("%d-%m-%Y")
+
+        if not path.exists():
+            os.makedirs(path)
+
         if self.server.logname is not None:
             name = self.server.logname
         else:
             name = record.name
-        logger = logging.getLogger(name)
-        # N.B. EVERY record gets logged. This is because Logger.handle
-        # is normally called AFTER logger-level filtering. If you want
-        # to do filtering, do it at the client end to save wasting
-        # cycles and network bandwidth!
-        fileHandler = logging.FileHandler(filename='socketLog.log')
+
+        logger = logging.getLogger()
+
+        file_name = f"{date}-socketLog.log"
+
+        file = Path.joinpath(path, file_name)
+
+        fileHandler = logging.FileHandler(filename=str(file))
+        
         logFileFormatter = logging.Formatter(
             fmt=f"%(levelname)s %(asctime)s -\t%(name)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
@@ -81,15 +110,15 @@ class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
                 self.handle_request()
             abort = self.abort
 
-# def main():
-#     # logging.basicConfig(
-#     #     format='%(asctime)s - %(name)-15s %(levelname)-8s %(message)s',
-#     #     datefmt="%Y-%m-%d %H:%M:%S",)
-#     tcpserver = LogRecordSocketReceiver()
-#     print('About to start TCP server...')
-#     tcpserver.serve_until_stopped()
+def main():
+    # logging.basicConfig(
+    #     format='%(asctime)s - %(name)-15s %(levelname)-8s %(message)s',
+    #     datefmt="%Y-%m-%d %H:%M:%S",)
+    tcpserver = LogRecordSocketReceiver()
+    print('About to start TCP server...')
+    tcpserver.serve_until_stopped()
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()
 
    

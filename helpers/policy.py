@@ -39,7 +39,7 @@ def _loadPolicyConfig():
 
     with open('policyConfig', 'rb') as logConfig:
         log_config = pickle.load(logConfig)
-        print("log config", log_config)
+        
     return log_config
      
         

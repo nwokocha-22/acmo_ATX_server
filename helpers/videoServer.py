@@ -111,11 +111,9 @@ class ReceiveVideo:
 			Path: the path where the video file is saved
 		"""
 		date = datetime.now()
-		today = date.today().strftime("%d-%m-%Y")
-		filename = f'{today}-screen-recording'
-		root_folder = Path("C:/Recorded Videos")
+		root_folder = Path("C:/Activity Monitor")
 		try:
-			path = Path.joinpath(root_folder, client_ip, f"{date.month}", filename)
+			path = Path.joinpath(root_folder, client_ip, f"{date.month}")
 			if path.exists():
 				return path
 			else:
@@ -140,7 +138,11 @@ class ReceiveVideo:
 		if filename is None or not filename.endswith(".mkv"):
 			filename = f"{datetime.now().strftime('%d-%m-%Y')}.mkv"
 
-		file_path = Path.joinpath(path, filename)
+		today = datetime.today().strftime("%d-%m-%Y")
+		sub_dir = "Screen Recordings"
+		filefolder = f'{today}-screen-recording'
+
+		file_path = Path.joinpath(path, sub_dir, filefolder, filename)
 	
 		FPS = 30
 		# SIZE= (720, 450)
@@ -174,11 +176,16 @@ if __name__=="__main__":
 	PORT = 5005
 	
 	log_tcpserver = LogRecordSocketReceiver()
-	print('About to start TCP server...')
-	log_tcpserver.serve_until_stopped()
+	print('About to start Log TCP server...')
+	log_thread = Thread(target=log_tcpserver.serve_until_stopped)
+	log_thread.start()
 
 	print("starting video ")
 	video_server = ReceiveVideo(IP, PORT)
-	video_server.connect()
+	video_thread = Thread(target=video_server.connect)
+	video_thread.start()
+
+	log_thread.join()
+	video_thread.join()
 
 		

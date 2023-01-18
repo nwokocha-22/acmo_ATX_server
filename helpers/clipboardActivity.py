@@ -8,7 +8,7 @@ import  win32api
 import ctypes
 import socket
 from threading import Thread
-from helpers.policy import CopyPolicy
+from .policy import CopyPolicy
    
 
 class ClipboardMonitor:
@@ -16,8 +16,10 @@ class ClipboardMonitor:
     """
     Extends the copy policy class and monitors the clipboard
     """
+    #: when the main script is started, checks if the user has defaulted
+    hasDefaulted = CopyPolicy().policy["hasDefaulted"]
 
-    hasDefaulted = True
+    print("has defaulted:", hasDefaulted)
 
     @dataclass
     class Content:
@@ -82,15 +84,17 @@ class ClipboardMonitor:
         processes the clipboard content based on the file type
         """
         content = self.getClipboardContent()
+        try:
+            if content.type == 'text' and self._on_text:
+                self._on_text(content.value)
 
-        if content.type == 'text' and self._on_text:
-            self._on_text(content.value)
+            elif content.type == "image" and self._on_image:
+                self._on_image(content.value)
 
-        elif content.type == "image" and self._on_image:
-            self._on_image(content.value)
-
-        elif content.type == "files" and self._on_files:
-            self._on_files(content.value)
+            elif content.type == "files" and self._on_files:
+                self._on_files(content.value)
+        except AttributeError:
+            print("clipboard disabled")
 
     @staticmethod
     def getClipboardContent() -> Optional[Content]:
@@ -103,8 +107,18 @@ class ClipboardMonitor:
             wc.OpenClipboard()
             def checkFormat(format):
                 if wc.IsClipboardFormatAvailable(format):
-                    return wc.GetClipboardData(format)
+                    print("default status:", ClipboardMonitor.hasDefaulted)
+                    if ClipboardMonitor.hasDefaulted:
+                        ClipboardMonitor.clearClipboard()
+                        print("has default")
+                        return None
+                    else:
+                        return wc.GetClipboardData(format)
                 return 0
+
+            if default:= checkFormat(0):
+                return ClipboardMonitor.Content("default", default)
+
             if text:= checkFormat(wc.CF_UNICODETEXT):
                 return ClipboardMonitor.Content('text', text)
                 
@@ -133,10 +147,17 @@ class ClipboardMonitor:
         """
         print("clipboard enabled")
 
-    def clearClipboard(self):
+    @staticmethod
+    def clearClipboard():
+        print("Unauthorized, clipboard disabled!")
+        wc.OpenClipboard(None)
         wc.EmptyClipboard()
-        wc.CloseClipboard()
-        
+        #wc.CloseClipboard()
+
+        #ctypes.windll.user32.OpenClipboard(None)
+        #ctypes.windll.user32.EmptyClipboard()
+        #ctypes.windll.user32.CloseClipboard()
+
 # if __name__=="__main__":
 #     clipboard = ClipboardMonitor(on_text=print, on_file=None, on_image=None)
 #     clipboard.run()

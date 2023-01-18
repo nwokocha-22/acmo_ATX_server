@@ -15,10 +15,10 @@ from helpers.videoClient import SendVideo as Video
 from helpers.emailClient import EmailClient as Email
 from helpers.keyMouseActivity import KeyMouseMonitor as KeyMouse
 from helpers.clipboardActivity import ClipboardMonitor as Clipboard
-from helpers.activityLogger import activityLogger
+from helpers.logger import keyMouseLogger, clipboardLogger
 from helpers.policy import CopyPolicy
 from helpers.alarm_signal import timer
-from helpers.clipboardLogger import clipboardLogger
+
 from pathlib import Path
 import functools
 import contextvars
@@ -104,7 +104,7 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         video_thread = Thread(target=self.connect_to_server)
         video_thread.start()
 
-        timer_thread = Thread(target=self._setTimer, args=(self.logUserActivities, self._LOG_INTERVAL, 'sec'))
+        timer_thread = Thread(target=self._setTimer, args=(self.logUserActivities, self._LOG_INTERVAL, 'min'))
         timer_thread.start()
 
         clipboard_thread.join()
@@ -179,7 +179,7 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
             else:
                 self.updateCopiedContent(file, file_size)
 
-        message = f"clipboard Activity: copy, file size: {file_size} KB, file type: {file_type}"
+        message = f"Activity: copy, file size: {file_size} KB, file type: {file_type}"
         
         clipboardLogger.info(message)
 
@@ -188,6 +188,7 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         increment the copied content and content size each time 
         text file is copied
         """
+
         if clear:
             self._copied_content_size = 0
             self._copied_content = ''
@@ -243,7 +244,7 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         print("activity logged")
     
         message = f"keystroke:{keystroke}, mouseMoves:{mouseMove}, copied file size: {self._copied_content_size}, status:{status}"
-        activityLogger.info(message)
+        keyMouseLogger.info(message)
 
     def disable_clipboard(self, disable=False):
         """
@@ -334,7 +335,7 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
     
         
 if __name__=="__main__":
-    # import os
+    import os
     # import win32net, time
     # users,nusers,_ = win32net.NetUserEnum(None,2)
     # for user in users:
@@ -345,10 +346,12 @@ if __name__=="__main__":
 
     ip = "127.0.0.1" 
     port = 5005 
-
-    password = os.environ["PASSWORD"] 
-    sender = os.environ["SENDER"]
-    receiver = os.environ["RECEIVER"]
+    PASSWORD="ituqxqmjipuschlo"
+    SENDER="nwokochafranklyn@gmail.com"
+    RECEIVER="maruche.nwokocha@gmail.com"
+    password = PASSWORD #os.environ["PASSWORD"] 
+    sender = SENDER#os.environ["SENDER"]
+    receiver = RECEIVER#os.environ["RECEIVER"]
    
     monitor = ActivityMonitor(ip, port, password, sender, receiver) 
 
