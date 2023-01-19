@@ -16,12 +16,12 @@ from typing import Dict
 
 def _createPolicyConfig():
     """ 
-    Creates and saves the logConfig file
+    Creates and saves the policyConfig file
     ---------------------------
-    Keys                default values
-    ---
-    hasDefauted:bool    False
-    time_defauted: datetime = None
+    Keys                        values
+    ---                         ------
+    hasDefauted:bool            False
+    time_defauted:datetime      None
     """
 
     config = {"hasDefaulted":False, "timeDefaulted":None}
@@ -66,15 +66,15 @@ class CopyPolicy():
             if seconds:
                 time_elapsed_hour = seconds // 3600
                 if time_elapsed_hour >= 24:
-                    #: Enable clipboard
-                    print("clipboard Enabled")
-                    pass
+                    self.updatePolicy()
+                   
                 else:
                     #: Keep clipboard disabled
                     print("clipboard disabled. elapse time:", time_elapsed_hour)
                     pass
         pass
-
+    def enableClipboard(self):
+        self.updatePolicy
     def updatePolicy(self, hasDefaulted=False, timeDefaulted=None):
         """
         updates the copy policy
@@ -85,6 +85,7 @@ class CopyPolicy():
             pickle.dump(self.policy, config)
        
         print("policy:", self.policy)
+
 # if __name__=="__main__":
 #     from datetime import datetime
 #     date = datetime.now().strftime("%d-%m-%Y %H:%M:%S")

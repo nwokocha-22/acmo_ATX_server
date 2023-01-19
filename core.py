@@ -2,15 +2,11 @@
 import sys
 import io
 import time
-import signal
-import socket
 import os
 import ssl
-import getpass
-import asyncio
 import zipfile
-from datetime import datetime
 from threading import Thread
+from datetime import datetime, timedelta
 from helpers.videoClient import SendVideo as Video
 from helpers.emailClient import EmailClient as Email
 from helpers.keyMouseActivity import KeyMouseMonitor as KeyMouse
@@ -18,18 +14,6 @@ from helpers.clipboardActivity import ClipboardMonitor as Clipboard
 from helpers.logger import keyMouseLogger, clipboardLogger
 from helpers.policy import CopyPolicy
 from helpers.alarm_signal import timer
-
-from pathlib import Path
-import functools
-import contextvars
-
-
-
-
-__all__ = "to_thread",
-import win32security
-import win32api
-
 
 
 class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
@@ -93,23 +77,25 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         self.password = password
         self.sender = sender
         self.receiver = receiver
-
-        # self._setTimer(self.logUserActivities, 2, 'sec')
-        # self.run()
-        # self.connect_to_server()
-
+        
         clipboard_thread = Thread(target=self.run_clipboard_listener)
         clipboard_thread.start()
 
         video_thread = Thread(target=self.connect_to_server)
         video_thread.start()
 
+        #: Log user mouse and keyboard activities every 10 minutes
         timer_thread = Thread(target=self._setTimer, args=(self.logUserActivities, self._LOG_INTERVAL, 'min'))
         timer_thread.start()
+
+        #: check the policy status every 1 hour
+        timer_hr_thread = Thread(target=self._setTimer, args=(self.checkPolicyStatus, 1, 'hour'))
+        timer_hr_thread.start()
 
         clipboard_thread.join()
         video_thread.join()
         timer_thread.join()
+        timer_hr_thread.join()
 
     def _on_text(self, text:str):
         """
@@ -166,7 +152,12 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         -----------------
         return: None
         """
+
         print("policy invoked")
+
+        message = f"Activity: copy, file size: {file_size} KB, file type: {file_type}"
+        clipboardLogger.info(message)
+
         if file_type == "text":
             if file_size >= self._copied_content_limit:
                 self.invokeDisciplinaryAction(file_size, file, file_type)
@@ -179,9 +170,7 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
             else:
                 self.updateCopiedContent(file, file_size)
 
-        message = f"Activity: copy, file size: {file_size} KB, file type: {file_type}"
         
-        clipboardLogger.info(message)
 
     def updateCopiedContent(self, content='', size=0, clear=False):
         """
@@ -198,19 +187,6 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
 
         print("copied content size:", self._copied_content_size)
 
-    def logActivities(self):
-        """
-        gets the number of keystrokes, mouse move, and the size of item copied to clipboard
-        and logs the information
-        """
-        key_stroke = self._key_stroke_count
-        #print("key stroke", key_stroke)
-
-    def logTimer(self):
-        """
-        calls the log activity function every ten minutes
-        """
-        pass
 
     def checkCopiedContent(self):
         """
@@ -218,12 +194,11 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         if greater than 500, calls the send method of the email client and sends
         all content copied up until that time.
         """
-        #print("checking content copied!") 
-        
         if self._copied_content_size >= 500:
             self.invokeDisciplinaryAction(self._copied_content_size, self._copied_content, "text")
         else:
             self.updateCopiedContent(clear=True)
+        
 
     def logUserActivities(self):
         """
@@ -243,14 +218,9 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         
         print("activity logged")
     
-        message = f"keystroke:{keystroke}, mouseMoves:{mouseMove}, copied file size: {self._copied_content_size}, status:{status}"
+        message = f"keystroke:{k}, mouseMoves:{m}, status:{status}"
         keyMouseLogger.info(message)
 
-    def disable_clipboard(self, disable=False):
-        """
-        Disables the clipboard for 24 hours
-        """                                                                            
-        print("keyboard is disabled; can't copy file")
         
     def invokeDisciplinaryAction(self, file_size, file, file_type):
         """
@@ -261,52 +231,44 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         print("deciplinary actiion invoked!")
         #time = datetime.now().strftime("%d-%m-%Y - %H:%M:%S")
         
-        self.updatePolicy(hasDefaulted=True, timeDefaulted=time.time())
-        self.disable_clipboard(True)
-
         if file_type == "text":
             self.send_email(self.user, file_size, file)
         else:
             #: send files as attachment if not text (i.e for bytes and images)
             self.send_email(self.user, file_size, "see attached zipped file(s)", file)
 
-    def handle_time_elapsed_signal(self, signum, frame):
-        """
-        a signal handler function that is called when the 24 hours in which the clipboard is 
-        disabled is up
+        if not self.hasDefaulted:
+            self.updatePolicy(True, time.time())
+            self.disableClipboard()
+
+    def checkPolicyStatus(self):
+        """ 
+        - Checks the time elapsed since the copy policy was violated.
+
+        - When Script is started, checks if the current user has defaulted by copying file size more than
+          500 in one hour, or 1500 in 24 hours. 
+          if yes, checks if it has been more than 24 hours.
+          If more than 24 hours, enables the clipboard. If less, ensures the clipboard remain disabled.
+        
         """
         if self.hasDefaulted:
-            self.hasDefaulted = False
-        else:
-            self.hasDefaulted = True
 
-    def estimateTime(self, signum, frame):
-        """
-        Estimates the number of time the user is idle
-        """
-        print("sig num", signum, os.getpid())
+            default_time = self.policy["timeDefaulted"]
+            current_time = time.time()
+            print(default_time, current_time)
+            time_elapsed_seconds = timedelta(time.time() - self.policy["timeDefaulted"]).seconds
+            
+            if time_elapsed_seconds:
+                time_elapsed_hour = time_elapsed_seconds // 3600
 
-        #: kill the process that emits the signal -> SIGPROF
-
-    def _terminateScript(self):
-        """
-         terminates the script when a User is logged out of the remote Machine
-        """
-        os.kill(os.getpid(), signal.SIGPROF)
-
-    def _autoStartScript(self):
-        """
-        - starts the script when a User is logged in
-        """
-        os.startfile("core.exe")
-
-    def autostartProgram(name, location):
-        """ 
-        Automatically start the script when a User is logged in
-        """
-        os.system(r"reg add HKCU\software\microsoft\windows\currentversion\run /v%s /t REG_SZ /d %s" % (name, location) )
-
-
+                if time_elapsed_hour >= 24:
+                    self.updatePolicy()
+                   
+                else:
+                    
+                    print("clipboard disabled. elapse time:", time_elapsed_hour)
+                   
+        pass
     @staticmethod
     @timer
     def _setTimer(callback, interval, mode):
@@ -321,18 +283,6 @@ class ActivityMonitor(Clipboard, Video, Email, KeyMouse, CopyPolicy):
         """
         print("timer started") 
 
-    
-
-    # async def video_client_connection(self):
-    #     return await self.to_thread(self.connect_to_server)
-    
-    # async def clipboard_pump_messages(self):
-    #     return await self.to_thread(self.run_clipboard_listener)
-
-    # async def run_timer(self):
-    #     return await self.to_thread(self._setTimer, (self.logUserActivities, 10, 'sec'))
-
-    
         
 if __name__=="__main__":
     import os

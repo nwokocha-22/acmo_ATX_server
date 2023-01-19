@@ -10,17 +10,16 @@ import socket
 from threading import Thread
 from .policy import CopyPolicy
    
-
+@dataclass
 class ClipboardMonitor:
 
     """
     Extends the copy policy class and monitors the clipboard
     """
     #: when the main script is started, checks if the user has defaulted
-    hasDefaulted = CopyPolicy().policy["hasDefaulted"]
-
-    print("has defaulted:", hasDefaulted)
-
+    policy = CopyPolicy().policy
+    hasDefaulted = policy["hasDefaulted"]
+    
     @dataclass
     class Content:
         def __init__(self, type:str, value:Union[str, List[Path]]):
@@ -39,14 +38,12 @@ class ClipboardMonitor:
         self._copied_content_size = int()
         self._copied_content = str()
 
-        #CopyPolicy.__init__(self)
+        #: args passed on to sibling classes -> Video(ip, port) -> Email(password, sender, receiver)
         super().__init__(ip, port, password, sender, receiver)
         
         print("clipboard thread started..")
         
-        #self.run()
-    
-    
+       
     def _create_base_window(self) -> int:
         """
         Creates a window for listening to clipboard
@@ -69,7 +66,7 @@ class ClipboardMonitor:
         hwnd = self._create_base_window()
         ctypes.windll.user32.AddClipboardFormatListener(hwnd)
         win32gui.PumpMessages()
-        input()
+        #input()
        
            
     def _handle_message_from_clipboard(self, hwnd: int, msg: int, wparam: int, lparam: int):
@@ -85,16 +82,17 @@ class ClipboardMonitor:
         """
         content = self.getClipboardContent()
         try:
-            if content.type == 'text' and self._on_text:
-                self._on_text(content.value)
+            if content:
+                if content.type == 'text' and self._on_text:
+                    self._on_text(content.value)
 
-            elif content.type == "image" and self._on_image:
-                self._on_image(content.value)
+                elif content.type == "image" and self._on_image:
+                    self._on_image(content.value)
 
-            elif content.type == "files" and self._on_files:
-                self._on_files(content.value)
-        except AttributeError:
-            print("clipboard disabled")
+                elif content.type == "files" and self._on_files:
+                    self._on_files(content.value)
+        except Exception as err:
+            print(err)
 
     @staticmethod
     def getClipboardContent() -> Optional[Content]:
@@ -116,9 +114,6 @@ class ClipboardMonitor:
                         return wc.GetClipboardData(format)
                 return 0
 
-            if default:= checkFormat(0):
-                return ClipboardMonitor.Content("default", default)
-
             if text:= checkFormat(wc.CF_UNICODETEXT):
                 return ClipboardMonitor.Content('text', text)
                 
@@ -131,15 +126,15 @@ class ClipboardMonitor:
             return None
             
         finally:
-            wc.CloseClipboard()
+            pass
+            #wc.CloseClipboard()
 
     def disableClipboard(self):
         """
         Empties and disables the clipboard
         """
-        # wc.EmptyClipboard()
-        # win32api.RegSetValue()
-        print("clipboard disabled")
+        self.hasDefaulted = True
+        self.clearClipboard()
 
     def enableClipboard(self):
         """

@@ -63,24 +63,24 @@ class LogonLogoffService(win32serviceutil.ServiceFramework):
                 if events:
                     for event in events:
                         if event.EventType == win32con.EVENTLOG_AUDIT_SUCCESS:
-                            if event.EventID == win32con.EVENTLOG_AUDIT_SUCCESS:
-                                if event.StringInserts[-1] == "Logon":
-                                    print("Remote desktop logon event detected")
-                                    script_path = r"C:\ActivityMonitor\core.py"
-                                    args = ["arg1", "arg2", "arg3"]
-                                    # Start the script and pass arguments
-                                    process = subprocess.Popen(script_path, shell=True)
-                                elif event.StringInserts[-1] == "Logoff":
-                                    print("Remote desktop logoff event detected")
-                                    # Kill the script when logoff event is detected
-                                    if process:
-                                        process.kill()
-                                    current_record = win32evtlog.GetNumberOfEventLogRecords(h)
-                                    if current_record != last_record:
-                                        last_record = current_record
-                                    else:
-                                    # Wait for a second before checking again
-                                        win32event.WaitForSingleObject(self.hWaitStop, 1000)
+                            #if event.EventID == win32con.EVENTLOG_AUDIT_SUCCESS:
+                            if event.StringInserts[-1] == "Logon":
+                                print("Remote desktop logon event detected")
+                                script_path = r"C:\ActivityMonitor\core.py"
+                                # args = ["arg1", "arg2", "arg3"]
+                                # Start the script and pass arguments
+                                process = subprocess.Popen(script_path, shell=True)
+                            elif event.StringInserts[-1] == "Logoff":
+                                print("Remote desktop logoff event detected")
+                                # Kill the script when logoff event is detected
+                                if process:
+                                    process.kill()
+                                current_record = win32evtlog.GetNumberOfEventLogRecords(h)
+                                if current_record != last_record:
+                                    last_record = current_record
+                                else:
+                                # Wait for a second before checking again
+                                    win32event.WaitForSingleObject(self.hWaitStop, 1000)
 
     def SvcStop(self):
         """

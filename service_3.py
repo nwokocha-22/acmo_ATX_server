@@ -2,6 +2,8 @@ import win32serviceutil
 import win32event
 import subprocess
 
+#: USING EXEUTABLE
+
 #: INSTALL SERVICE
 #: python path/to/service.py install
 
@@ -16,17 +18,7 @@ import subprocess
 
 # 1072 error: means service is still there but marked for delection
 
-"""
 
-Anyone facing this issue, just copy pywintypes36.dll
-
-from Python36\Lib\site-packages\pywin32_system32
-
-to Python36\Lib\site-packages\win32
-
-Helpful commands:
-
-"""
 
 #: Install a service: python scriptName.py install
 
