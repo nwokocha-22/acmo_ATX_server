@@ -4,7 +4,7 @@ import pywintypes
 
 server = "WIN-35Q6G6JIQT0"
 log_type = "Security"
-hand = win32evtlog.OpenEventLog(server, log_type)
+eventLog = win32evtlog.OpenEventLog(server, log_type)
 
 def logoff_callback(z, x, y):
     print("event fired, ", z, x, y)
@@ -21,11 +21,12 @@ subscription = win32evtlog.EvtSubscribe(log_type, 1, None, Callback = logoff_cal
 
 while True:
     win32event.WaitForSingleObject(signalEvent, win32event.INFINITE)
-    events = win32evtlog.EvtNext(subscription, 1)
+    events = win32evtlog.EvtNext(signalEvent, 1)
     for event in events:
         if event.EventID == 4634:
             logoff_callback(event)
         elif event.EventID == 4624:
             print("log in detected")
-win32evtlog.CloseEventLog(hand)
+
+win32evtlog.CloseEventLog(eventLog)
 win32evtlog.EvtClose(subscription)
