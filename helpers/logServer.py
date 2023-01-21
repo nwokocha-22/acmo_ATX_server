@@ -52,12 +52,15 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         # implied by the record.
         print("record made")
         client_ip =  self.server.server_address[0]
-        #path = self.create_dir(client_ip)
-        path = Path.cwd()/"Log"/client_ip/"activityLogs"
-        print("path:", path)
+        #Activity Monitor/127.0.0.1/January/Logs/12-/1/2022-activityLog
         
-        #
-        date = datetime.today().strftime("%d-%m-%Y")
+        root_folder = Path.home()/"Activity Monitor"
+        month = datetime.today().strftime("%B")
+
+        path = Path.joinpath(root_folder, client_ip, f"{month}", "Logs")
+       
+        print("path:", path)
+    
 
         if not path.exists():
             os.makedirs(path)
@@ -69,7 +72,8 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
 
         logger = logging.getLogger()
 
-        file_name = f"{date}-socketLog.log"
+        date = datetime.today().strftime("%d-%m-%Y")
+        file_name = f"{date}-activityLog.log"
 
         file = Path.joinpath(path, file_name)
 
@@ -110,15 +114,6 @@ class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
                 self.handle_request()
             abort = self.abort
 
-def main():
-    # logging.basicConfig(
-    #     format='%(asctime)s - %(name)-15s %(levelname)-8s %(message)s',
-    #     datefmt="%Y-%m-%d %H:%M:%S",)
-    tcpserver = LogRecordSocketReceiver()
-    print('About to start TCP server...')
-    tcpserver.serve_until_stopped()
 
-if __name__ == '__main__':
-    main()
 
    

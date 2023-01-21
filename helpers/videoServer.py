@@ -5,7 +5,7 @@ import numpy as np
 from datetime import datetime
 from pathlib import Path
 import os
-from logServer import LogRecordSocketReceiver
+
 
 
 class ReceiveVideo:
@@ -110,10 +110,10 @@ class ReceiveVideo:
 		return: 
 			Path: the path where the video file is saved
 		"""
-		date = datetime.now()
+		month = datetime.today().strftime("%B")
 		root_folder = Path("C:/Activity Monitor")
 		try:
-			path = Path.joinpath(root_folder, client_ip, f"{date.month}")
+			path = Path.joinpath(root_folder, client_ip, f"{month}", "Videos")
 			if path.exists():
 				return path
 			else:
@@ -169,23 +169,6 @@ class ReceiveVideo:
 		video, _ = self.create_video_file("video", path)
 		return video
 
-if __name__=="__main__":
-	#IP = socket.gethostbyname(socket.gethostname())
-	IP = "127.0.0.1"
-	print("IP", IP)
-	PORT = 5005
-	
-	log_tcpserver = LogRecordSocketReceiver()
-	print('About to start Log TCP server...')
-	log_thread = Thread(target=log_tcpserver.serve_until_stopped)
-	log_thread.start()
 
-	print("starting video ")
-	video_server = ReceiveVideo(IP, PORT)
-	video_thread = Thread(target=video_server.connect)
-	video_thread.start()
-
-	log_thread.join()
-	video_thread.join()
 
 		
