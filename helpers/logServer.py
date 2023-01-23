@@ -54,14 +54,11 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         client_ip =  self.server.server_address[0]
         #Activity Monitor/127.0.0.1/January/Logs/12-/1/2022-activityLog
         
-        root_folder = Path.home()/"Activity Monitor"
+        root_folder = Path("C:/Activity Monitor")
         month = datetime.today().strftime("%B")
 
         path = Path.joinpath(root_folder, client_ip, f"{month}", "Logs")
        
-        print("path:", path)
-    
-
         if not path.exists():
             os.makedirs(path)
 
@@ -83,6 +80,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             fmt=f"%(levelname)s %(asctime)s -\t%(name)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
+
         fileHandler.setFormatter(logFileFormatter)
         logger.addHandler(fileHandler)
         logger.handle(record)

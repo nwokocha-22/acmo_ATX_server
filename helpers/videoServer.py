@@ -10,7 +10,7 @@ import os
 
 class ReceiveVideo:
 
-	BUFFER:int = 1024 * 1024
+	BUFFER:int = 1024 * 1024 * 1024
 	FPS:int = 30
 	size:tuple = (720, 450)
 	date:datetime = datetime.now()
@@ -165,7 +165,7 @@ class ReceiveVideo:
 		Parameter:
 			ip: client's ip
 		"""
-		path = self.create_dir(IP)
+		path = self.create_dir(ip)
 		video, _ = self.create_video_file("video", path)
 		return video
 
