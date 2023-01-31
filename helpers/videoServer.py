@@ -10,8 +10,8 @@ import os
 
 class ReceiveVideo:
 
-	BUFFER:int = 1024 * 1024 * 1024
-	FPS:int = 30
+	BUFFER:int = 65536
+	FPS:int = 60
 	size:tuple = (720, 450)
 	date:datetime = datetime.now()
 
@@ -44,7 +44,9 @@ class ReceiveVideo:
 		cv2.namedWindow(client_ip, cv2.WINDOW_NORMAL)
 
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
-			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, self.BUFFER)
+			#sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.BUFFER)
+
 			sock_udp.bind(('', self.port))
 
 			while True:
@@ -73,7 +75,7 @@ class ReceiveVideo:
 	def connect(self):
 		"""
 		establishes a three way hand shake with the clients, and spawn a thread to send data
-		to the connect client
+		to the connect client through a udp socket
 		"""
 	
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
@@ -89,7 +91,8 @@ class ReceiveVideo:
 
 				print("connected to:", client)
 
-				video_file = self.get_videio_file(addr[0])
+				#: once a new client is connected, create a video file using the client ip
+				video_file = self.get_video_file(addr[0])
 
 				data = client.recv(1024).decode()
 
@@ -110,9 +113,10 @@ class ReceiveVideo:
 		return: 
 			Path: the path where the video file is saved
 		"""
-		month = datetime.today().strftime("%B")
-		root_folder = Path("C:/Activity Monitor")
+		
 		try:
+			root_folder = Path("C:/Activity Monitor")
+			month = datetime.today().strftime("%B")
 			path = Path.joinpath(root_folder, client_ip, f"{month}", "Videos")
 			if path.exists():
 				return path
@@ -128,21 +132,21 @@ class ReceiveVideo:
 		creates the video file using the path
 		----------------
 		Parameter:
-			:filename: the file. creates a name with today's day if filename is not provide
+			:filename: the video file (.mkv). creates a name with today's day if filename is not provide
 			:path: the parent path to the file. this is joined with the filename to create the absolute path
+			abs_path ** video: C:\ \Activity Monitor \\ 127.0.0.1 \\ January \\ Videos \\ 12/1/2022-video.mkv
+			abs_path ** Logs: C:\\ Activity Monitor \\ 127.0.0.1 \\ January \\ Logs \\ 12-/1/2022-activityLog
 		----------------
 		Return:
 			:video_file: the videoWriter object where the video frame received from the client will be written
 			:file_path: the path where the video is saved
 		"""
+		#: C:\\Activity Monitor\\127.0.0.1\\January\\Vidoes
 		if filename is None or not filename.endswith(".mkv"):
-			filename = f"{datetime.now().strftime('%d-%m-%Y')}.mkv"
+			filename = f"{datetime.now().strftime('%d-%m-%Y')}-screen-recording.mkv"
 
-		today = datetime.today().strftime("%d-%m-%Y")
-		sub_dir = "Screen Recordings"
-		filefolder = f'{today}-screen-recording'
-
-		file_path = Path.joinpath(path, sub_dir, filefolder, filename)
+	
+		file_path = Path.joinpath(path, filename)
 	
 		FPS = 30
 		# SIZE= (720, 450)
@@ -158,13 +162,14 @@ class ReceiveVideo:
 		return video_file, file_path
 			
 	
-	def get_videio_file(self, ip):
+	def get_video_file(self, ip):
 		"""
 		gets the created video file
 		---------------
 		Parameter:
 			ip: client's ip
 		"""
+		# create_dir -> create_video_file -> get_video_file
 		path = self.create_dir(ip)
 		video, _ = self.create_video_file("video", path)
 		return video

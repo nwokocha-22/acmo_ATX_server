@@ -17,16 +17,20 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         according to whatever policy is configured locally.
         """
         while True:
-            chunk = self.connection.recv(4)
-            if len(chunk) < 4:
+            try:
+                chunk = self.connection.recv(4)
+                if len(chunk) < 4:
+                    break
+                slen = struct.unpack('>L', chunk)[0]
+                chunk = self.connection.recv(slen)
+                while len(chunk) < slen:
+                    chunk = chunk + self.connection.recv(slen - len(chunk))
+                obj = self.unPickle(chunk)
+                record = logging.makeLogRecord(obj)
+                self.logRecord(record)
+            except ConnectionResetError:
+                print("An existing connection was forcefully closed")
                 break
-            slen = struct.unpack('>L', chunk)[0]
-            chunk = self.connection.recv(slen)
-            while len(chunk) < slen:
-                chunk = chunk + self.connection.recv(slen - len(chunk))
-            obj = self.unPickle(chunk)
-            record = logging.makeLogRecord(obj)
-            self.logRecord(record)
 
     def unPickle(self, data):
         return pickle.loads(data)
@@ -35,10 +39,11 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         """
         constructs a path where the log file is saved
         """
-        date = datetime.now()
-        root_folder = Path("C:/Activity Monitor")
+        
         try:
-            path = Path.joinpath(root_folder, client_ip, f"{date.month}")
+            root_folder = Path("C:/Activity Monitor")
+            month = datetime.today().strftime("%B")
+            path = Path.joinpath(root_folder, client_ip, f"{month}", "Logs")
             if path.exists():
                 return path
             else:
@@ -50,15 +55,12 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     def logRecord(self, record):
         # if a name is specified, we use the named logger rather than the one
         # implied by the record.
+        # Activity Monitor/127.0.0.1/January/Logs/12-/1/2022-activityLog
+
         print("record made")
         client_ip =  self.server.server_address[0]
-        #Activity Monitor/127.0.0.1/January/Logs/12-/1/2022-activityLog
-        
-        root_folder = Path("C:/Activity Monitor")
-        month = datetime.today().strftime("%B")
+        path = self.create_dir(client_ip)
 
-        path = Path.joinpath(root_folder, client_ip, f"{month}", "Logs")
-       
         if not path.exists():
             os.makedirs(path)
 
