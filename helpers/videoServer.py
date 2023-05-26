@@ -11,25 +11,29 @@ class StreamVideo(threading.Thread):
 		Receives the video frame comming from the connected client
 		and saves the video file at a directory
 	"""
+	print(" ==VIDEO  STREAM STARTED== ")
 	BUFFER:int = 65536
 	FPS:int = 60
-	size:tuple = (720, 450)
+	# self.size = (720, 480)
+	size:tuple = (320, 240)
 	date:datetime = datetime.now()
 
-	def __init__(self, ip,video_file, **kwargs):
+	def __init__(self, addrs,video_file, **kwargs):
 
-		self.ip = ip
+		self.ip = addrs[0]
+		self.port = addrs[1]
+		self.addr = addrs
+		print("ADDRESS:", self.addr)
 		self.video_file = video_file
 
 		super(StreamVideo, self).__init__(**kwargs)
 		self.start()
 
 	def run(self):
-		pass
+		self.recv_video_frame()
 
 	def recv_video_frame(self):
 		"""
-
 		Establishes a connection to the client through a UDP socket, 
 		receives the video frame transmitted by the client.
 
@@ -43,17 +47,26 @@ class StreamVideo(threading.Thread):
 			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, self.BUFFER)
 			#sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.BUFFER)
 			
-			sock_udp.bind(('', self.ip))
+			sock_udp.bind(('', self.port))
 			
 			while True:
+				#: Receive the data from the client
+				print("RECEVING...")
+
 				packet, addr = sock_udp.recvfrom(self.BUFFER) # 1 MB buffer
 				
+				print("UDP CLIENT:"	, addr)
 				# Terminates loop if the client is no longer active
+				
 				if packet == None:
 					break
 
-				#: stream the data from that particular client
+				#: stream the data from a particular client
+				#: check if the video frame received is comming from the client connected to this thread
+				print("TCP CLIENT:", self.ip, "UDP CLIENT:", addr[0])
+				print("no match", self.ip, addr[0])
 				if self.ip == addr[0]:
+					print("match", self.ip, addr[0])
 					frame = cv2.imdecode(np.frombuffer(packet, np.uint8), cv2.IMREAD_COLOR)
 					title = f'{self.ip if addr else "VIDEO"}'
 
@@ -73,9 +86,9 @@ class StreamVideo(threading.Thread):
 		self.video_file.release()
 
 class VideoServer(threading.Thread):
-
+	print(" VIDEO SERVER STARTED ")
 	connected_clients = []
-	address = (5055, socket.gethostbyname(socket.gethostname()))
+	address = (5055, str(socket.gethostbyname(socket.gethostname())))
 
 	def __init__(self, **kwargs):
 		super(VideoServer, self).__init__(**kwargs)
@@ -90,7 +103,8 @@ class VideoServer(threading.Thread):
 		"""
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
 			sock_tcp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			sock_tcp.bind(self.address)
+			#sock_tcp.bind(self.address)
+			sock_tcp.bind(('127.0.0.1', 5055))
 			sock_tcp.listen(5)
 			
 			while True:
@@ -104,12 +118,12 @@ class VideoServer(threading.Thread):
 				video_file = self.get_video_file(addr[0])
 
 				data = client.recv(1024).decode()
-				
+
 				print("message from client:", data)
 
 				if data == "ready":
 					client.send(str.encode("shoot"))
-					video_stream_thread = StreamVideo(addr[0], video_file)
+					video_stream_thread = StreamVideo(addr, video_file)
 					self.connected_clients.append(video_stream_thread)
 
 				print(f"{len(self.connected_clients)} clients connected")
