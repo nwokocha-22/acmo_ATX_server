@@ -1,7 +1,7 @@
 
 from threading import Thread
 from helpers.logServer import LogRecordSocketReceiver
-from helpers.videoServer import ReceiveVideo
+from helpers.videoServer import VideoServer
 
 def main():
 
@@ -10,13 +10,9 @@ def main():
     #: the received log is also save in the log sub folder of the Activity Monitor folder
     #: The Activity Monitor directory is automatically created if it does not exist
 
-    IP = "127.0.0.1"
-    PORT = 5005
-	
     print("starting video thread...")
-    video_server = ReceiveVideo(IP, PORT)
-    video_thread = Thread(target=video_server.connect)
-    video_thread.start()
+    video_server = VideoServer()
+    video_server.start()
     
     print("starting Log thread...")
     log_tcpserver = LogRecordSocketReceiver()
@@ -25,7 +21,7 @@ def main():
     log_thread.start()
 
     log_thread.join()
-    video_thread.join()
+    video_server.join()
 
 if __name__=="__main__":
     main()
