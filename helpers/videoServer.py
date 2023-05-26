@@ -7,7 +7,10 @@ from pathlib import Path
 import os
 
 class StreamVideo(threading.Thread):
-
+	"""
+		Receives the video frame comming from the connected client
+		and saves the video file at a directory
+	"""
 	BUFFER:int = 65536
 	FPS:int = 60
 	size:tuple = (720, 450)
@@ -25,6 +28,12 @@ class StreamVideo(threading.Thread):
 		pass
 
 	def recv_video_frame(self):
+		"""
+
+		Establishes a connection to the client through a UDP socket, 
+		receives the video frame transmitted by the client.
+
+		"""
 		print("receiving data...")
 		
 		#: create a video player with a title of the client's ip address
@@ -39,7 +48,7 @@ class StreamVideo(threading.Thread):
 			while True:
 				packet, addr = sock_udp.recvfrom(self.BUFFER) # 1 MB buffer
 				
-				# Terminate thread if clear is no longer active
+				# Terminates loop if the client is no longer active
 				if packet == None:
 					break
 
@@ -66,6 +75,7 @@ class StreamVideo(threading.Thread):
 class VideoServer(threading.Thread):
 
 	connected_clients = []
+	address = (5055, socket.gethostbyname(socket.gethostname()))
 
 	def __init__(self, **kwargs):
 		super(VideoServer, self).__init__(**kwargs)
@@ -73,13 +83,11 @@ class VideoServer(threading.Thread):
 	def run(self):
 		self.connect()
 
-
 	def connect(self):
 		"""
 		establishes a three way hand shake with the clients, and spawn a thread to send data
 		to the connect client through a udp socket
 		"""
-	
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
 			sock_tcp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			sock_tcp.bind(self.address)
@@ -96,6 +104,7 @@ class VideoServer(threading.Thread):
 				video_file = self.get_video_file(addr[0])
 
 				data = client.recv(1024).decode()
+				
 				print("message from client:", data)
 
 				if data == "ready":
@@ -104,7 +113,7 @@ class VideoServer(threading.Thread):
 					self.connected_clients.append(video_stream_thread)
 
 				print(f"{len(self.connected_clients)} clients connected")
-				
+
 				for thread in self.connected_clients:
 					thread.join()
 
@@ -153,7 +162,7 @@ class VideoServer(threading.Thread):
 		FPS = 30
 		#: ensure that SIZE is the same as size of the frame received else
 		#: the frame will not write to the video file
-		#: WARING: Do not change the size except the size of the transmitted frame is changed
+		#: WARING: Do not change the size except the size of the transmitted frame changes
 
 		
 		#: pixel aspect ration 1: 1
@@ -162,7 +171,9 @@ class VideoServer(threading.Thread):
 
 		SIZE = (320, 240) 
 		
-		# SIZE = (720, 480) => alternative
+		# SIZE = (720, 480) => alternativen Frame: Warning, when using this 
+		# ensure the size of the in-coming video frames are the same
+
 		FOURCC = cv2.VideoWriter_fourcc(*"XVID")
 
 		#file_name = "user_activity.mkv"
