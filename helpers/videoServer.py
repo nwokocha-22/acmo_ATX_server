@@ -39,11 +39,11 @@ class StreamVideo(threading.Thread):
 
 		"""
 		print("receiving data...")
-		
+		global i
 		#: create a video player with a title of the client's ip address
-		video_window_name = f"{self.ip}-{random.choice(ascii_letters)}-{i:=i+1}"
+		video_window_name = f"{self.ip}-{random.choice(ascii_letters)}-{i}"
 		cv2.namedWindow(self.ip, cv2.WINDOW_NORMAL)
-
+		i += 1
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
 			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, self.BUFFER)
 			#sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.BUFFER)
