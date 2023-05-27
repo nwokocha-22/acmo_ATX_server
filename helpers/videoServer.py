@@ -42,7 +42,7 @@ class StreamVideo(threading.Thread):
 		global i
 		#: create a video player with a title of the client's ip address
 		video_window_name = f"{self.ip}-{random.choice(ascii_letters)}-{i}"
-		cv2.namedWindow(self.ip, cv2.WINDOW_NORMAL)
+		cv2.namedWindow(video_window_name, cv2.WINDOW_NORMAL)
 		i += 1
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
 			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, self.BUFFER)
@@ -76,7 +76,7 @@ class StreamVideo(threading.Thread):
 					#video_file.write(frame)
 
 					#: display the frame
-					cv2.imshow(title, frame)
+					cv2.imshow(video_window_name, frame)
 					key = cv2.waitKey(1) & 0xFF
 
 				if key == ord('q'):
