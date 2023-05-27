@@ -3,7 +3,7 @@ from threading import Thread
 from helpers.logServer import LogRecordSocketReceiver
 from helpers.videoServer import VideoServer
 
-def main():
+def main(ip, port):
 
     #: starts the Video receiver and the Log receivers on different threads
     #: The received video (mkv format) is writen to a file and save in the Activity Monitor folder
@@ -11,7 +11,7 @@ def main():
     #: The Activity Monitor directory is automatically created if it does not exist
 
     print("starting video thread...")
-    video_server = VideoServer()
+    video_server = VideoServer(ip, port)
     video_server.start()
     
     print("starting Log thread...")
@@ -24,4 +24,8 @@ def main():
     video_server.join()
 
 if __name__=="__main__":
-    main()
+
+    ip ='127.0.0.1'
+    port = 5055
+
+    main(ip, port)

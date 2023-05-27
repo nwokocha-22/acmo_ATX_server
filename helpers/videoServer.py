@@ -89,7 +89,6 @@ class StreamVideo(threading.Thread):
 class VideoServer(threading.Thread):
 	print(" VIDEO SERVER STARTED ")
 	connected_clients = []
-	address = (5055, str(socket.gethostbyname(socket.gethostname())))
 
 	def __init__(self, server_ip, server_port, **kwargs):
 		self.server_ip = server_ip
@@ -158,7 +157,7 @@ class VideoServer(threading.Thread):
 			print(err)
 			
 
-	def create_video_file(self, filename:None, path) -> cv2.VideoWriter:
+	def create_video_file(self, filename:str, path) -> cv2.VideoWriter:
 		"""
 		creates the video file using the path
 		----------------
