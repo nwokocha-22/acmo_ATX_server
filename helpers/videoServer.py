@@ -73,7 +73,6 @@ class StreamVideo(threading.Thread):
 					key = cv2.waitKey(1) & 0xFF
 
 				if key == ord('q'):
-					sock_udp.sendto(b'closed', addr)
 					sock_udp.close()
 					break
 
