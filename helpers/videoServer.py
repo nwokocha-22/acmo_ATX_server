@@ -27,10 +27,10 @@ class StreamVideo(threading.Thread):
 		self.video_file = video_file
 
 		super(StreamVideo, self).__init__(**kwargs)
-		self.start()
 
 	def run(self):
-		self.recv_video_frame()
+		thread = threading.Thread(target= self.recv_video_frame)
+		thread.start()
 
 	def recv_video_frame(self):
 		"""
@@ -41,7 +41,7 @@ class StreamVideo(threading.Thread):
 		print("receiving data...")
 		global i
 		#: create a video player with a title of the client's ip address
-		video_window_name = f"{self.ip}-{random.choice(ascii_letters)}-{i}"
+		video_window_name = f"{self.ip}-{i}"
 		cv2.namedWindow(video_window_name, cv2.WINDOW_NORMAL)
 		i += 1
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
@@ -52,11 +52,7 @@ class StreamVideo(threading.Thread):
 			
 			while True:
 				#: Receive the data from the client
-				print("RECEVING...")
-
 				packet, addr = sock_udp.recvfrom(self.BUFFER) # 1 MB buffer
-				
-				print("UDP CLIENT:"	, addr)
 				# Terminates loop if the client is no longer active
 				
 				if packet == None:
@@ -64,10 +60,7 @@ class StreamVideo(threading.Thread):
 
 				#: stream the data from a particular client
 				#: check if the video frame received is comming from the client connected to this thread
-				print("TCP CLIENT:", self.ip, "UDP CLIENT:", addr[0])
-				print("no match", self.ip, addr[0])
 				if self.ip == addr[0]:
-					print("match", self.ip, addr[0])
 					frame = cv2.imdecode(np.frombuffer(packet, np.uint8), cv2.IMREAD_COLOR)
 					title = f'{self.ip if addr else "VIDEO"}'
 
@@ -80,6 +73,7 @@ class StreamVideo(threading.Thread):
 					key = cv2.waitKey(1) & 0xFF
 
 				if key == ord('q'):
+					sock_udp.sendto(b'closed', addr)
 					sock_udp.close()
 					break
 
@@ -126,6 +120,7 @@ class VideoServer(threading.Thread):
 				if data == "ready":
 					client.send(str.encode("shoot"))
 					video_stream_thread = StreamVideo(client_ip, self.server_port, video_file)
+					video_stream_thread.start()
 					self.connected_clients.append(video_stream_thread)
 
 				print(f"{len(self.connected_clients)} clients connected")
