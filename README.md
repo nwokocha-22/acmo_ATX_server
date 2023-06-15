@@ -46,9 +46,6 @@
 
 #: ALTERNATIVELY - USING EXEUTABLE
 
-#: STEP 1: CONVERT TO EXECUTABLE FILE
-#: pyinstaller --onefile --console --name --core_server main.py
-
 #: STEP 2: INSTALL YOUR EXECUTABLE
 
 #: first navigate to the folder containing the executable file
@@ -69,3 +66,17 @@
 - you you encounter this error: `Error removing service: The specified service has been marked for deletion. (1072)`
 - right click on the service in task manager > services and select go to process. Kill the process attached to the service (pythonservice.exe). That should fix the problem
 - 
+### PREPARING THE SCRIPT FOR PRODUCTION
+- get rid of the README.md, requirements.txt and other binary files that are not crucial to the funtianality of the script
+- run the code below in the command-line to generate an executable
+
+- dist/main.exe install to install
+- dist/main.exe start to start
+
+### GENERATING EXECUTABLE
+- had to run the code below to build the executable of main.exe
+
+#### pyinstaller.exe --runtime-tmpdir=. --hidden-import win32timezone --collect-submodules helpers --hidden-import logging.handlers --hidden-import socketserver --hidden-import cv2 --name main_server --onefile main.py
+
+
+- to avoid unpacking files in the window's temporary folder which will be deleted, include `--runtime-tmpdir=.` in your build command. To fix that, unpack your executable where it will not be deleted by windows.

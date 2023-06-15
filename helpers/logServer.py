@@ -1,15 +1,17 @@
 import pickle
 import logging
 import logging.handlers
+import socket
 import socketserver
 import struct
 from datetime import datetime
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+from helpers.loggers.errorLog import error_logger
 import os
 
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
-  
+    logged = False
     def handle(self):
         """
         Handle multiple requests - each expected to be a 4-byte length,
@@ -29,8 +31,13 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
                 record = logging.makeLogRecord(obj)
                 self.logRecord(record)
             except ConnectionResetError:
-                print("An existing connection was forcefully closed")
-                break
+                if not self.logged:
+                    client_ip =  self.server.server_address[0]
+                    trace = f"{client_ip} disconnected"
+                    print(trace)
+                    error_logger.debug(trace)
+                    self.logged = True
+                    break
 
     def unPickle(self, data):
         return pickle.loads(data)
@@ -57,7 +64,6 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         # implied by the record.
         # Activity Monitor/127.0.0.1/January/Logs/12-/1/2022-activityLog
 
-        print("record made")
         client_ip =  self.server.server_address[0]
         path = self.create_dir(client_ip)
 
@@ -71,21 +77,26 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
 
         logger = logging.getLogger()
 
-        date = datetime.today().strftime("%d-%m-%Y")
-        file_name = f"{date}-activityLog.log"
+        # Ensure to attach handler only once to avoid the 
+        # duplication of log message
 
-        file = Path.joinpath(path, file_name)
+        if not logger.hasHandlers():
+            date = datetime.today().strftime("%d-%m-%Y")
+            file_ = f"{date}-activityLog.log"
+            file_name = Path.joinpath(path, file_)
+            fileHandler = logging.FileHandler(filename=str(file_name))
+            
+            logFileFormatter = logging.Formatter(
+                fmt=f"%(levelname)s : %(asctime)s - %(name)s - %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
 
-        fileHandler = logging.FileHandler(filename=str(file))
-        
-        logFileFormatter = logging.Formatter(
-            fmt=f"%(levelname)s %(asctime)s -\t%(name)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+            fileHandler.setFormatter(logFileFormatter)
+            logger.addHandler(fileHandler)
 
-        fileHandler.setFormatter(logFileFormatter)
-        logger.addHandler(fileHandler)
-        logger.handle(record)
+            logger.handle(record)
+        else:
+            logger.handle(record)
 
 class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
     """
@@ -94,7 +105,8 @@ class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
 
     allow_reuse_address = True
 
-    def __init__(self, host='localhost',
+    def __init__(self, 
+                 host=socket.gethostbyname(socket.gethostname()),
                  port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
                  handler=LogRecordStreamHandler):
 

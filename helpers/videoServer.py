@@ -4,9 +4,8 @@ import cv2
 import numpy as np
 from datetime import datetime
 from pathlib import Path
+import glob
 import os
-import random
-from string import ascii_letters
 i =0
 class StreamVideo(threading.Thread):
 	"""
@@ -81,12 +80,14 @@ class StreamVideo(threading.Thread):
 
 class VideoServer(threading.Thread):
 	print(" VIDEO SERVER STARTED ")
+	
 	connected_clients = []
 
-	def __init__(self, server_ip, server_port, **kwargs):
-		self.server_ip = server_ip
-		self.server_port = server_port
+	def __init__(self, **kwargs):
 		super(VideoServer, self).__init__(**kwargs)
+
+		self.server_ip = socket.gethostbyname(socket.gethostname())#'127.0.0.1'
+		self.server_port = 5055
 
 	def run(self):
 		self.connect()
@@ -169,7 +170,7 @@ class VideoServer(threading.Thread):
 			filename = f"{datetime.now().strftime('%d-%m-%Y')}-screen-recording.mkv"
 
 		file_path = Path.joinpath(path, filename)
-		FPS = 30
+		FPS = 60
 		#: ensure that SIZE is the same as size of the frame received else
 		#: the frame will not write to the video file
 		#: WARING: Do not change the size except the size of the transmitted frame changes
@@ -179,18 +180,24 @@ class VideoServer(threading.Thread):
 		#: Screen aspect ration 4: 3
 		#: suitable for web streaming
 
-		SIZE = (320, 240) 
-		
-		# SIZE = (720, 480) => alternativen Frame: Warning, when using this 
-		# ensure the size of the in-coming video frames are the same
+		#SIZE = (320, 240) # LOW
+		SIZE = (640, 480) # STANDARD
+		#SIZE = (720, 480) # HIGH
+
+		# alternative Frame:
+		# WARNING: Always, ensure the size of the in-coming video frames from are the same
+		# with size of the videowriter
 
 		FOURCC = cv2.VideoWriter_fourcc(*"XVID")
+		#: if there is an existing video recording for the day
+		#: create a different video file
 
-		#file_name = "user_activity.mkv"
-		video_file = cv2.VideoWriter(str(file_path), FOURCC, FPS, SIZE)
-		#video_file = cv2.VideoWriter(file_name, FOURCC, FPS, SIZE)
-		
-		return video_file
+		if file_path.exists():
+			with open(file_path, 'wb') as video_file:
+				return cv2.VideoWriter(str(video_file), FOURCC, FPS, SIZE)
+		else:
+			video_file = cv2.VideoWriter(str(file_path), FOURCC, FPS, SIZE)
+			return video_file
 			
 	
 	def get_video_file(self, ip):
