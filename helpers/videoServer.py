@@ -175,7 +175,7 @@ class VideoServer(threading.Thread):
 		
 		filename = self.create_unique_video_name(path)
 		file_path = Path.joinpath(path, filename)
-		FOURCC = cv2.VideoWriter_fourcc(*"XVID")
+		FOURCC = cv2.VideoWriter_fourcc(*"mkv")#formally->XVID
 		video_file = cv2.VideoWriter(str(file_path), FOURCC, self.FPS, self.SIZE)
 		return video_file
 			
