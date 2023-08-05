@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 import glob
 import os
+from helpers.loggers.errorLog import error_logger
 i =0
 class StreamVideo(threading.Thread):
 	"""
@@ -79,15 +80,18 @@ class StreamVideo(threading.Thread):
 		self.video_file.release()
 
 class VideoServer(threading.Thread):
-	print(" VIDEO SERVER STARTED ")
-	
+
 	connected_clients = []
 
-	def __init__(self, **kwargs):
+	def __init__(self, config, **kwargs):
+
+		self.FPS = config['VIDEO']['fps']
+		self.SIZE = config['VIDEO']['frame.size']
+
 		super(VideoServer, self).__init__(**kwargs)
 
 		self.server_ip = socket.gethostbyname(socket.gethostname())#'127.0.0.1'
-		self.server_port = 5055
+		self.server_port = config['DEFAULT']['port']
 
 	def run(self):
 		self.connect()
@@ -109,13 +113,13 @@ class VideoServer(threading.Thread):
 
 				client, addr = sock_tcp.accept()
 				client_ip, _ = addr
-				print("connected to:", client)
+				print(f"{client_ip} Connected")
+				error_logger.info(f"{client_ip} Connected")
 				#: once a new client is connected, create a video file using the client ip
 				video_file = self.get_video_file(client_ip)
 
+				#: handshake from client
 				data = client.recv(1024).decode()
-
-				print("message from client:", data)
 
 				if data == "ready":
 					client.send(str.encode("shoot"))
@@ -152,7 +156,7 @@ class VideoServer(threading.Thread):
 			print(err)
 			
 
-	def create_video_file(self, filename:str, path) -> cv2.VideoWriter:
+	def create_video_file(self, path) -> cv2.VideoWriter:
 		"""
 		creates the video file using the path
 		----------------
@@ -165,39 +169,15 @@ class VideoServer(threading.Thread):
 		Return:
 			:video_file: the videoWriter object where the video frame received from the client will be written
 		"""
+		#: WARNING: if the video frame is the same size as incoming frames from client
+		#: The video frame can be changed in the config file (amserver.ini)
 		#: C:\\Activity Monitor\\127.0.0.1\\January\\Vidoes
-		if filename is None or not filename.endswith(".mkv"):
-			filename = f"{datetime.now().strftime('%d-%m-%Y')}-screen-recording.mkv"
-
-		file_path = Path.joinpath(path, filename)
-		FPS = 60
-		#: ensure that SIZE is the same as size of the frame received else
-		#: the frame will not write to the video file
-		#: WARING: Do not change the size except the size of the transmitted frame changes
-
 		
-		#: pixel aspect ration 1: 1
-		#: Screen aspect ration 4: 3
-		#: suitable for web streaming
-
-		#SIZE = (320, 240) # LOW
-		SIZE = (640, 480) # STANDARD
-		#SIZE = (720, 480) # HIGH
-
-		# alternative Frame:
-		# WARNING: Always, ensure the size of the in-coming video frames from are the same
-		# with size of the videowriter
-
+		filename = self.create_unique_video_name(path)
+		file_path = Path.joinpath(path, filename)
 		FOURCC = cv2.VideoWriter_fourcc(*"XVID")
-		#: if there is an existing video recording for the day
-		#: create a different video file
-
-		if file_path.exists():
-			with open(file_path, 'wb') as video_file:
-				return cv2.VideoWriter(str(video_file), FOURCC, FPS, SIZE)
-		else:
-			video_file = cv2.VideoWriter(str(file_path), FOURCC, FPS, SIZE)
-			return video_file
+		video_file = cv2.VideoWriter(str(file_path), FOURCC, self.FPS, self.SIZE)
+		return video_file
 			
 	
 	def get_video_file(self, ip):
@@ -209,9 +189,18 @@ class VideoServer(threading.Thread):
 		"""
 		# create_dir -> create_video_file -> get_video_file
 		path = self.create_dir(ip)
-		video_file = self.create_video_file("video", path)
+		video_file = self.create_video_file(path)
 		return video_file
 
+	def create_unique_video_name(self, path):
+		""" 
+		- Creates unique video file names
+		- Renames video recording if there is an existing video for current day
+		"""
+		date_str = datetime.now().strftime('%d-%m-%Y')
+		num = len([video_file for video_file in os.listdir(path) if video_file.startswith(date_str)])
+		filename = f"{date_str}-screen-recording-{num}.mkv"
+		return filename
 
 
 		

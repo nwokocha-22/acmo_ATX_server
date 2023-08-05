@@ -4,6 +4,7 @@ import helpers
 from threading import Thread
 from helpers.logServer import LogRecordSocketReceiver
 from helpers.videoServer import VideoServer
+import configparser
 
 def main_app():
 
@@ -12,13 +13,12 @@ def main_app():
     #: the received log is also save in the log sub folder of the Activity Monitor folder
     #: The Activity Monitor directory is automatically created if it does not exist
 
-    print("starting video thread...")
-    video_server = VideoServer()
+    config = configparser.ConfigParser()
+    config.read('amserver.ini')
+    video_server = VideoServer(config)
     video_server.start()
     
-    print("starting Log thread...")
     log_tcpserver = LogRecordSocketReceiver()
-    print('About to start Log TCP server...')
     log_thread = Thread(target=log_tcpserver.serve_until_stopped)
     log_thread.start()
 

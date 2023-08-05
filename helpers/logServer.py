@@ -35,7 +35,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
                     client_ip =  self.server.server_address[0]
                     trace = f"{client_ip} disconnected"
                     print(trace)
-                    error_logger.debug(trace)
+                    error_logger.info(trace)
                     self.logged = True
                     break
 

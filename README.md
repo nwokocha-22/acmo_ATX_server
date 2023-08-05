@@ -1,64 +1,40 @@
 
-## ACTIVITY MONITOR - SERVER
+# ACTIVITY MONITOR - SERVER
+## v 1.0.0
 
-# Starting the script
+## Starting the Script
+`python ./main.py`
 
-#: You can get the script running by starting the activity monitor server service
+### HOW IT WORKS
+- Running the main.py module starts the Video and LogServer threads
 
-### to start the activity service
+- The ReceiveVideo class of the videoServer module handles the writing and streaming of video frames receipt through the UDP sockets and outputs the frame in a CV2 Window.
 
-    task manager -> service - ActivityMonitorServer -> right clik and select 'start' to start the script or 'stop' to stop it
+- The captured video can be viewed in real time. The frames are also written to a video file that is saved to `C:\\Activity Monitor\\client ip\\current month\\screen recording\\video_file.mkv`
 
-#: Alteranatively, you can navigate to the script through an IDE (Vscode).
+- The vidoe file can be played using VLC media player
 
-#: Ensure you are in the directory containing the script.
-
-#: To run the script, type:
-    python ./main.py
-
-### Where to find Recorded Videos and Logs
-
-#: Screen recordings are logs can be found in the resources folder.
-
-#: Path to Logs
-    - current directory /Resources /IP unique folder/Month/Logs/daily activity Log
-
-#: Path to Screen recordings
-    - current directory /Resources /IP unique folder/Month/Videos/daily screen recordings
-
+### Where to find Activity Logs transmitted from the client(s)
+- The log output in the client is transmitted through a tcp connection and saved in a log file in the server. The saved log file can be found in `C:\\Activity Monitor\\client ip\\current month\\Logs\\logfile.log`
 
 ### WINDOW SERVICES
 
-#: INSTALL SERVICE
-#: python scriptName.py install
+- To setup the window service for the server, please  refer to the steps outlined below
 
-#: UNINSTALL SERVICE
-#: python scriptName.py remove
+# TO INSTALL
+- ./dist/main_client.exe install
 
-#: START SERVICE
-#: python scriptName.py start
+# TO START
+- ./dist/main_client.exe start
 
-#: UPDATE SERVICE
-#: python scriptName.py update
+# TO STOP
+- ./dist/main_client.exe stop
 
-#: STOP SERVICE
-#: python scriptName.py update
+# To REMOVE
+- ./dist/main_client.exe remove
 
-#: ALTERNATIVELY - USING EXEUTABLE
 
-#: STEP 2: INSTALL YOUR EXECUTABLE
-
-#: first navigate to the folder containing the executable file
-
-#: yourexefile.exe --startup delayed install
-
-#: STEP 3: START YOUR EXECUATABLE
-#: yourexefile.exe start
-
-#: REMOVE SERVICE
-#: sc delete servicename
-
-# LIBRARIES AND DEPENDENCIES
+# THIRD PARTY LIBRARIES AND POSSIBLE EXCEPTIONS
 - using cv2 from opencv-python (4.7.0.68) raises AttributeError: partially initialized module 'cv2' has no attribute 'gapi_wip_gst_GStreamerPipeline' (most likely due to a circular import)
 - to solve this problem uninstall opencv-python, opencv-contrib-python, and opencv-python-headless, then reinstall opencv-python
 
@@ -67,16 +43,14 @@
 - right click on the service in task manager > services and select go to process. Kill the process attached to the service (pythonservice.exe). That should fix the problem
 - 
 ### PREPARING THE SCRIPT FOR PRODUCTION
-- get rid of the README.md, requirements.txt and other binary files that are not crucial to the funtianality of the script
-- run the code below in the command-line to generate an executable
-
-- dist/main.exe install to install
-- dist/main.exe start to start
+- Refer to the steps outlined in the ACTIVITY_MONITOR_CLIENT's README.md
 
 ### GENERATING EXECUTABLE
-- had to run the code below to build the executable of main.exe
+- To build the executable, run the code below in the terminal
 
-#### pyinstaller.exe --runtime-tmpdir=. --hidden-import win32timezone --collect-submodules helpers --hidden-import logging.handlers --hidden-import socketserver --hidden-import cv2 --name main_server --onefile main.py
+`pyinstaller.exe --runtime-tmpdir=. --hidden-import win32timezone --collect-submodules helpers --hidden-import logging.handlers --hidden-import socketserver --hidden-import cv2 --name main_server --onefile main.py`
 
+- to avoid unpacking files in the window's temporary folder which will be deleted, always include `--runtime-tmpdir=.` in your build command. it unpacks your executable where it will not be deleted by windows.
 
-- to avoid unpacking files in the window's temporary folder which will be deleted, include `--runtime-tmpdir=.` in your build command. To fix that, unpack your executable where it will not be deleted by windows.
+### NEED MORE INFO?
+- Reach out to Maruche
