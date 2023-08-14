@@ -13,8 +13,7 @@ import os
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     logged = False
     def handle(self):
-        """
-        Handle multiple requests - each expected to be a 4-byte length,
+        """ Handle multiple requests - each expected to be a 4-byte length,
         followed by the LogRecord in pickle format. Logs the record
         according to whatever policy is configured locally.
         """
@@ -34,17 +33,34 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
                 if not self.logged:
                     client_ip =  self.server.server_address[0]
                     trace = f"{client_ip} disconnected"
-                    print(trace)
                     error_logger.info(trace)
                     self.logged = True
                     break
 
     def unPickle(self, data):
+        """Unpickles the pickled log object received
+        
+        Parameter
+        ---------
+        data : bytes
+            The pickled log object
+        """
+
+
         return pickle.loads(data)
 
     def create_dir(self, client_ip):
-        """
-        constructs a path where the log file is saved
+        """Constructs a path where the log file is saved.
+
+        Paremeter
+        ---------
+        client_ip : str
+            IP address of the client that connected with the server
+
+        Returns
+        ---------
+        path: str
+            path to the folder where the log file will be saved
         """
         
         try:
@@ -60,9 +76,13 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             print(err)
 
     def logRecord(self, record):
-        # if a name is specified, we use the named logger rather than the one
-        # implied by the record.
-        # Activity Monitor/127.0.0.1/January/Logs/12-/1/2022-activityLog
+        """ Records the log received from client.
+
+        Parameter
+        ---------
+        record : `str`
+            log file received from client
+        """
 
         client_ip =  self.server.server_address[0]
         path = self.create_dir(client_ip)
@@ -74,11 +94,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             name = self.server.logname
         else:
             name = record.name
-
         logger = logging.getLogger()
-
-        # Ensure to attach handler only once to avoid the 
-        # duplication of log message
 
         if not logger.hasHandlers():
             date = datetime.today().strftime("%d-%m-%Y")
@@ -99,8 +115,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             logger.handle(record)
 
 class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
-    """
-    Simple TCP socket-based logging receiver suitable for testing.
+    """Simple TCP socket-based logging receiver.
     """
 
     allow_reuse_address = True
