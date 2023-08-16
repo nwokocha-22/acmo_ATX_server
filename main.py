@@ -19,7 +19,7 @@ def main_app():
     config = configparser.ConfigParser()
     config.read('amserver.ini')
 
-    video_server = VideoServer(config)
+    video_server = VideoServer()
     video_server.start()
     
     log_tcpserver = LogRecordSocketReceiver()

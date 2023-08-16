@@ -7,12 +7,14 @@ import cv2
 import numpy as np
 from datetime import datetime
 from pathlib import Path
-import glob
 import os
 from helpers.loggers.errorLog import error_logger
+from configparser import ConfigParser
 
 _BUFFER:int = 65536
 _index=0
+config = ConfigParser()
+config.read('amserver.ini')
 
 class StreamVideo(threading.Thread):
 	"""Receives the video frame comming from the connected client
@@ -37,7 +39,7 @@ class StreamVideo(threading.Thread):
 		global _index
 		video_window_name = f"{self.ip}-{_index}"
 		cv2.namedWindow(video_window_name, cv2.WINDOW_NORMAL)
-		index += 1
+		_index += 1
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
 			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, _BUFFER)
 			sock_udp.bind(('', self.server_port))
@@ -84,16 +86,14 @@ class VideoServer(threading.Thread):
 	list of connected clients' IP addresses (`list`)
 	"""
 
-	def __init__(self, config, **kwargs):
+	fps:int = config['VIDEO']['fps']
+	frame_height:int = int(config['VIDEO']['frame.height'])
+	frame_width:int = int(config['VIDEO']['frame.width'])
+	server_ip:str = socket.gethostbyname(socket.gethostname())
+	server_port:int = int(config['DEFAULT']['port'])
 
-		self.fps = config['VIDEO']['fps']
-		self.resolution = config['VIDEO']['frame.resolution']
-		self.server_ip = socket.gethostbyname(socket.gethostname())
-		self.server_port = int(config['DEFAULT']['port'])
-
+	def __init__(self, **kwargs):
 		super(VideoServer, self).__init__(**kwargs)
-
-		
 
 	def run(self):
 		self.connect()
@@ -184,14 +184,15 @@ class VideoServer(threading.Thread):
 		filename = self.create_unique_video_name(path)
 		file_path = Path.joinpath(path, filename)
 		FOURCC = cv2.VideoWriter_fourcc(*'XVID')
-		#SUPPORTED->XVID, MJPG(HIGH VIDEO QUOALITY), DIVX(FOR WINDOWS)
-		video_file = cv2.VideoWriter(str(file_path), 
-									FOURCC, 
-									self.fps, 
-									self.resolution)
+		#SUPPORTS->XVID, MJPG(HIGH VIDEO QUOALITY), DIVX(FOR WINDOWS
+		video_file = cv2.VideoWriter(
+			str(file_path), 
+			FOURCC, 
+			int(self.fps), 
+			(self.frame_height, self.frame_width))
+
 		return video_file
 			
-	
 	def get_video_file(self, ip):
 		"""gets the created video file.
 
