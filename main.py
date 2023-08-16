@@ -29,8 +29,4 @@ def main_app():
     video_server.join()
 
 if __name__=="__main__":
-    import socket
-    
-    ip = socket.gethostbyname(socket.gethostname())#'127.0.0.1'
-    port = 5055
     main_app()
