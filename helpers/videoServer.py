@@ -11,27 +11,14 @@ import glob
 import os
 from helpers.loggers.errorLog import error_logger
 
-index=0
+_BUFFER:int = 65536
+_index=0
+
 class StreamVideo(threading.Thread):
 	"""Receives the video frame comming from the connected client
 		and saves the video file at a designated directory.
 	"""
-	BUFFER:int = 65536
-	"""
-	The buffer size for receiving packets in bytes.
-	"""
-	FPS:int = 80
-	"""
-	Frame per seconds
-	"""
-	size:tuple = (1920, 1080)
-	"""
-	resolution of the received video frame
-	"""
-	date:datetime = datetime.now()
-	"""
-	The date the video recapturing was made
-	"""
+
 	def __init__(self, client_ip,server_port, video_file, **kwargs):
 		self.ip = client_ip
 		self.server_port = server_port
@@ -47,21 +34,23 @@ class StreamVideo(threading.Thread):
 		"""Establishes a connection with the client through a UDP socket, 
 		receives the video frame transmitted by the client.
 		"""
-		global index
-		video_window_name = f"{self.ip}-{index}"
+		global _index
+		video_window_name = f"{self.ip}-{_index}"
 		cv2.namedWindow(video_window_name, cv2.WINDOW_NORMAL)
 		index += 1
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
-			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, self.BUFFER)
+			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, _BUFFER)
 			sock_udp.bind(('', self.server_port))
 			
 			while True:
-				packet, addr = sock_udp.recvfrom(self.BUFFER) # 1 MB buffer
+				packet, addr = sock_udp.recvfrom(_BUFFER) # 1 MB buffer
 				if packet == None:
 					break
 
 				if self.ip == addr[0]:
-					frame = cv2.imdecode(np.frombuffer(packet, np.uint8), cv2.IMREAD_COLOR)
+					frame = cv2.imdecode(
+						np.frombuffer(packet, np.uint8), 
+						cv2.IMREAD_COLOR)
 					title = f'{self.ip if addr else "VIDEO"}'
 					self.video_file.write(frame)
 					cv2.imshow(video_window_name, frame)
@@ -97,20 +86,21 @@ class VideoServer(threading.Thread):
 
 	def __init__(self, config, **kwargs):
 
-		self.FPS = 80#config['VIDEO']['fps']
-		self.SIZE = (1920, 1080)#config['VIDEO']['frame.size']
+		self.fps = config['VIDEO']['fps']
+		self.resolution = config['VIDEO']['frame.resolution']
+		self.server_ip = socket.gethostbyname(socket.gethostname())
+		self.server_port = int(config['DEFAULT']['port'])
 
 		super(VideoServer, self).__init__(**kwargs)
 
-		self.server_ip = socket.gethostbyname(socket.gethostname())#'127.0.0.1'
-		self.server_port = 5055 #int(config['DEFAULT']['port'])
+		
 
 	def run(self):
 		self.connect()
 
 	def connect(self):
-		""" establishes a three way hand shake with the clients, and spawn a thread to send data
-		to the connect client through a udp socket.
+		"""Establishes a three way hand shake with the clients, and spawn a 
+		thread to send data to the connect client through a udp socket.
 
 		"""
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
@@ -127,13 +117,13 @@ class VideoServer(threading.Thread):
 				error_logger.info(f"{client_ip} Connected")
 				#: once a new client is connected, create a video file using the client ip
 				video_file = self.get_video_file(client_ip)
-
-				#: handshake from client
 				data = client.recv(1024).decode()
 
 				if data == "ready":
 					client.send(str.encode("shoot"))
-					video_stream_thread = StreamVideo(client_ip, self.server_port, video_file)
+					video_stream_thread = StreamVideo(client_ip, 
+													  self.server_port, 
+													  video_file)
 					video_stream_thread.start()
 					self.connected_clients.append(video_stream_thread)
 
@@ -175,8 +165,10 @@ class VideoServer(threading.Thread):
 		Parameter
 		---------
 			path: str
-			the parent path to the file. this is joined with the filename to create the absolute path
-			``video: C:\ \Activity Monitor \\ 127.0.0.1 \\ January \\ Videos \\ 12/1/2022-video.mkv``
+			the parent path to the file. this is joined with the filename 
+			to create the absolute path
+			``video: C:\ \Activity Monitor \\ 127.0.0.1 \\ January \\ Videos \
+				\\ 12/1/2022-video.mkv``
 	
 		Note
 		----
@@ -185,13 +177,18 @@ class VideoServer(threading.Thread):
 
 		Return
 		------
-			video_file: cv2.VideoWriter
-			the videoWriter object where the video frame received from the client will be written
+			video_file: `cv2.VideoWriter`
+			the videoWriter object where the video frame received from the client 
+			will be written
 		"""
 		filename = self.create_unique_video_name(path)
 		file_path = Path.joinpath(path, filename)
-		FOURCC = cv2.VideoWriter_fourcc('1','4','2','0')#formally->XVID, MJPG(HIGH VIDEO QUOALITY), DIVX(FOR WINDOWS)
-		video_file = cv2.VideoWriter(str(file_path), FOURCC, 100, (1920, 1080))
+		FOURCC = cv2.VideoWriter_fourcc(*'XVID')
+		#SUPPORTED->XVID, MJPG(HIGH VIDEO QUOALITY), DIVX(FOR WINDOWS)
+		video_file = cv2.VideoWriter(str(file_path), 
+									FOURCC, 
+									self.fps, 
+									self.resolution)
 		return video_file
 			
 	
@@ -221,8 +218,9 @@ class VideoServer(threading.Thread):
 				the new video file name.
 		"""
 		date_str = datetime.now().strftime('%d-%m-%Y')
-		num = len([video_file for video_file in os.listdir(path) if video_file.startswith(date_str)])
-		filename = f"{date_str}-screen-recording-{num}.avi"
+		num = len([video_file for video_file in os.listdir(path) \
+			if video_file.startswith(date_str)])
+		filename = f"{date_str}-screen-recording-{num}.mkv"
 		return filename
 
 

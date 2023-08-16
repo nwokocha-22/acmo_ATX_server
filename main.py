@@ -11,7 +11,8 @@ def main_app():
 
     Note
     ------
-        - The received video (mkv format) is writen to a file and save in the Activity Monitor folder.
+        - The received video (mkv format) is writen to a file and save in the Activity 
+          Monitor folder.
         - the received log is also save in the log sub folder of the Activity Monitor folder.
         - The Activity Monitor directory is automatically created if it does not exist.
     """
