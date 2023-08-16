@@ -1,3 +1,4 @@
+#!usr/bin/
 import sys
 sys.path.append('.')
 import helpers
@@ -12,15 +13,17 @@ import servicemanager
 import sys
 import servicemanager  # Simple setup and logging
 import multiprocessing
-import glob
 
 def main_app():
+    """Starts the Video receiver and the Log receivers on different threads.
 
-    #: starts the Video receiver and the Log receivers on different threads
-    #: The received video (mkv format) is writen to a file and save in the Activity Monitor folder
-    #: the received log is also save in the log sub folder of the Activity Monitor folder
-    #: The Activity Monitor directory is automatically created if it does not exist
-    
+    Note
+    ------
+        - The received video (mkv format) is writen to a file and save in the Activity Monitor folder
+        - The received log is also save in the log sub folder of the Activity Monitor folder
+        - he Activity Monitor directory is automatically created if it does not exist
+    """
+
     video_server = VideoServer()
     video_server.start()
     
@@ -33,8 +36,7 @@ def main_app():
 
 
 class ActivityMonitorServerService(win32serviceutil.ServiceFramework):
-    """
-        This script is the window service that starts and stops the core_app.exe client file
+    """Starts and stops the core_app.exe client file.
     """
 
     _svc_name_ = "AMService"

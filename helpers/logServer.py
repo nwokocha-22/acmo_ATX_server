@@ -13,7 +13,7 @@ import os
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     logged = False
     def handle(self):
-        """ Handle multiple requests - each expected to be a 4-byte length,
+        """ Handles multiple requests - each expected to be a 4-byte length,
         followed by the LogRecord in pickle format. Logs the record
         according to whatever policy is configured locally.
         """
