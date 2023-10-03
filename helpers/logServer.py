@@ -13,9 +13,9 @@ import os
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     logged = False
     def handle(self):
-        """ Handles multiple requests - each expected to be a 4-byte length,
-        followed by the LogRecord in pickle format. Logs the record
-        according to whatever policy is configured locally.
+        """Handles multiple requests - each expected to be a 4-byte
+        length, followed by the LogRecord in pickle format. Logs the
+        record according to whatever policy is configured locally.
         """
         while True:
             try:
@@ -38,31 +38,28 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
                     break
 
     def unPickle(self, data):
-        """Unpickles the pickled log object received
+        """Unpickles the pickled log object received.
         
-        Parameter
-        ---------
-        data : bytes
-            The pickled log object
+        Parameters
+        ----------
+        data: bytes
+            The pickled log object.
         """
-
-
         return pickle.loads(data)
 
     def create_dir(self, client_ip):
-        """Constructs a path where the log file is saved.
+        """Constructs a path where the log file will be saved.
 
-        Paremeter
-        ---------
-        client_ip : str
-            IP address of the client that connected with the server
+        Paremeters
+        ----------
+        client_ip: str
+            IP address of the client that connected with the server.
 
         Returns
-        ---------
+        -------
         path: str
-            path to the folder where the log file will be saved
+            Path to the folder where the log file will be saved.
         """
-        
         try:
             root_folder = Path("C:/Activity Monitor")
             month = datetime.today().strftime("%B")
@@ -76,14 +73,13 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             print(err)
 
     def logRecord(self, record):
-        """ Records the log received from client.
+        """Records the log received from client.
 
-        Parameter
-        ---------
-        record : `str`
-            log file received from client
+        Parameters
+        ----------
+        record: str
+            Log file received from client
         """
-
         client_ip =  self.server.server_address[0]
         path = self.create_dir(client_ip)
 
@@ -120,11 +116,10 @@ class LogRecordSocketReceiver(socketserver.ThreadingTCPServer):
 
     allow_reuse_address = True
 
-    def __init__(self, 
+    def __init__(self,
                  host=socket.gethostbyname(socket.gethostname()),
                  port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
                  handler=LogRecordStreamHandler):
-
         socketserver.ThreadingTCPServer.__init__(self, (host, port), handler)
         self.abort = 0
         self.timeout = 1

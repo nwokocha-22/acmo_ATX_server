@@ -15,13 +15,17 @@ import servicemanager  # Simple setup and logging
 import multiprocessing
 
 def main_app():
-    """Starts the Video receiver and the Log receivers on different threads.
+    """Starts the Video receiver and the Log receivers on different
+    threads.
 
-    Note
-    ------
-        - The received video (mkv format) is writen to a file and save in the Activity Monitor folder
-        - The received log is also save in the log sub folder of the Activity Monitor folder
-        - he Activity Monitor directory is automatically created if it does not exist
+    Notes
+    -----
+        - The received video (mkv format) is writen to a file and saved
+        in the Activity Monitor folder.
+        - The received log is also saved in the log sub folder of the
+        Activity Monitor folder.
+        - The Activity Monitor directory is automatically created if it
+        does not exist.
     """
 
     video_server = VideoServer()
@@ -41,7 +45,7 @@ class ActivityMonitorServerService(win32serviceutil.ServiceFramework):
 
     _svc_name_ = "AMService"
     _svc_display_name_ = "Activity Monitor Service"
-    _svc_description_ = "Starts, stops, udpate, and removes the activity monitor server"
+    _svc_description_ = "Starts, stops, udpate, and removes the activity monitor server."
 
     def __init__(self, args):
         win32serviceutil.ServiceFramework.__init__(self, args)
@@ -73,7 +77,7 @@ if __name__ == "__main__":
     else:
         win32serviceutil.HandleCommandLine(ActivityMonitorServerService)
 
-#: COMMAND TO CONVERT TO EXECUTABLE
+# COMMAND TO CONVERT TO EXECUTABLE
 """
 pyinstaller.exe --runtime-tmpdir=. --hidden-import win32timezone --collect-submodules helpers --hidden-import logging.handlers --hidden-import socketserver --hidden-import cv2 --name main_server --onefile main.py
 """

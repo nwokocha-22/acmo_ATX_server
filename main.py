@@ -7,14 +7,17 @@ from helpers.videoServer import VideoServer
 import configparser
 
 def main_app():
-    """Starts the Video receiver and the Log receivers on different threads.
+    """Starts the Video receiver and the Log receivers on different
+    threads.
 
-    Note
-    ------
-        - The received video (mkv format) is writen to a file and save in the Activity 
-          Monitor folder.
-        - the received log is also save in the log sub folder of the Activity Monitor folder.
-        - The Activity Monitor directory is automatically created if it does not exist.
+    Notes
+    -----
+    - The received video (mkv format) is writen to a file and saved in
+    the Activity Monitor folder.
+    - The received log is also saved in the log sub folder of the
+    Activity Monitor folder.
+    - The Activity Monitor directory is automatically created if it
+    does not exist.
     """
     config = configparser.ConfigParser()
     config.read('amserver.ini')

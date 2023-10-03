@@ -10,16 +10,16 @@
 
 - The ReceiveVideo class of the videoServer module handles the writing and streaming of video frames receipt through the UDP sockets and outputs the frame in a CV2 Window.
 
-- The captured video can be viewed in real time. The frames are also written to a video file that is saved to `C:\\Activity Monitor\\client ip\\current month\\screen recording\\video_file.mkv`
+- The captured video can be viewed in real time. The frames are also written to a video file that is saved to `C:\\Activity Monitor\\client ip\\current month\\Videos\\video_file.mkv`
 
-- The vidoe file can be played using VLC media player
+- The video file can be played using VLC media player
 
 ### Where to find Activity Logs transmitted from the client(s)
 - The log output in the client is transmitted through a tcp connection and saved in a log file in the server. The saved log file can be found in `C:\\Activity Monitor\\client ip\\current month\\Logs\\logfile.log`
 
 ### WINDOW SERVICES
 
-- To setup the window service for the server, please  refer to the steps outlined below
+- To setup the window service for the server, please  refer to the steps outlined below:
 
 # TO INSTALL
 - ./dist/main_client.exe install
@@ -39,8 +39,8 @@
 - to solve this problem uninstall opencv-python, opencv-contrib-python, and opencv-python-headless, then reinstall opencv-python
 
 ## RESOLVING SERVICE RELATED ERROR
-- you you encounter this error: `Error removing service: The specified service has been marked for deletion. (1072)`
-- right click on the service in task manager > services and select go to process. Kill the process attached to the service (pythonservice.exe). That should fix the problem
+- When you encounter this error: `Error removing service: The specified service has been marked for deletion. (1072)`
+- Right click on the service in task manager > services and select go to process. Kill the process attached to the service (pythonservice.exe). That should fix the problem
 - 
 ### PREPARING THE SCRIPT FOR PRODUCTION
 - Refer to the steps outlined in the ACTIVITY_MONITOR_CLIENT's README.md

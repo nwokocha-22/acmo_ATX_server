@@ -4,6 +4,7 @@
 import socket
 import threading
 import cv2
+import platform
 import numpy as np
 from datetime import datetime
 from pathlib import Path
@@ -11,8 +12,8 @@ import os
 from helpers.loggers.errorLog import error_logger
 from configparser import ConfigParser
 
-_BUFFER:int = 65536
-_index=0
+_BUFFER: int = 65536
+_index = 0
 config = ConfigParser()
 config.read('amserver.ini')
 
@@ -20,7 +21,6 @@ class StreamVideo(threading.Thread):
 	"""Receives the video frame comming from the connected client
 		and saves the video file at a designated directory.
 	"""
-
 	def __init__(self, client_ip,server_port, video_file, **kwargs):
 		self.ip = client_ip
 		self.server_port = server_port
@@ -33,15 +33,16 @@ class StreamVideo(threading.Thread):
 		thread.start()
 
 	def recv_video_frame(self):
-		"""Establishes a connection with the client through a UDP socket, 
-		receives the video frame transmitted by the client.
+		"""Establishes a connection with the client through a UDP
+		socket, receives the video frame transmitted by the client.
 		"""
 		global _index
 		video_window_name = f"{self.ip}-{_index}"
 		cv2.namedWindow(video_window_name, cv2.WINDOW_NORMAL)
 		_index += 1
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
-			sock_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, _BUFFER)
+			sock_udp.setsockopt(
+				socket.SOL_SOCKET, socket.SO_REUSEADDR, _BUFFER)
 			sock_udp.bind(('', self.server_port))
 			
 			while True:
@@ -67,30 +68,30 @@ class StreamVideo(threading.Thread):
 
 class VideoServer(threading.Thread):
 	"""
-	parameter
-	---------
-		config: `configParser.ConfigParser()`
-		configuration parameters for the video module
+	Parameters
+	----------
+	config: configParser.ConfigParser()
+		Configuration parameters for the video module.
 
 	Attributes
 	----------
-	FPS: `int`	
-		frame per second (default = 30)
+	FPS: int	
+		Frames per second (default = 30)
 
-	SIZE: `tuple (`int`, `int`)`
-		resolution of each frame in pixels
+	SIZE: tuple (int, int)
+		Resolution of each frame in pixels
 	"""
 
 	connected_clients = []
 	"""
-	list of connected clients' IP addresses (`list`)
+	List of connected clients' IP addresses (list)
 	"""
 
-	fps:int = config['VIDEO']['fps']
-	frame_height:int = int(config['VIDEO']['frame.height'])
-	frame_width:int = int(config['VIDEO']['frame.width'])
-	server_ip:str = socket.gethostbyname(socket.gethostname())
-	server_port:int = int(config['DEFAULT']['port'])
+	fps: int = config['VIDEO']['fps']
+	frame_height: int = int(config['VIDEO']['frame.height'])
+	frame_width: int = int(config['VIDEO']['frame.width'])
+	server_ip: str = socket.gethostbyname(socket.gethostname())
+	server_port: int = int(config['DEFAULT']['port'])
 
 	def __init__(self, **kwargs):
 		super(VideoServer, self).__init__(**kwargs)
@@ -99,8 +100,9 @@ class VideoServer(threading.Thread):
 		self.connect()
 
 	def connect(self):
-		"""Establishes a three way hand shake with the clients, and spawn a 
-		thread to send data to the connect client through a udp socket.
+		"""Establishes a three way hand shake with the clients, and
+		spawn a thread to send data to the connect client through a udp
+		socket.
 
 		"""
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock_tcp:
@@ -109,13 +111,14 @@ class VideoServer(threading.Thread):
 			sock_tcp.listen(5)
 			
 			while True:
-				#: waiting for a client to connect
-				print("waiting for a new connection")
+				# waiting for a client to connect
+				print("Waiting for a new connection")
 				client, addr = sock_tcp.accept()
 				client_ip, _ = addr
-				print(f"{client_ip} Connected")
-				error_logger.info(f"{client_ip} Connected")
-				#: once a new client is connected, create a video file using the client ip
+				print(f"{client_ip} connected")
+				error_logger.info(f"{client_ip} connected")
+				# once a new client is connected, create a video file
+				# using the client ip
 				video_file = self.get_video_file(client_ip)
 				data = client.recv(1024).decode()
 
@@ -132,18 +135,23 @@ class VideoServer(threading.Thread):
 				for thread in self.connected_clients:
 					thread.join()
 
-	def create_dir(self, client_ip):
-		"""Creates the path where to save the video file if it doesn't exist yet.
+	def check_platform(self):
+		"""Checks the operating system python is running on. """
+		return platform.system().lower()
+
+	def create_dir(self, client_ip) -> str:
+		"""Creates the path where the video file will be saved if it
+		doesn't exist yet.
 	
-		parameter
-		---------
-			client_ip: str
-			the ip of the client
+		Parameters
+		----------
+		client_ip: str
+			The IP address of the client.
 		
-		return: 
+		Returns
 		-------
-			Path: str
-			the path where the video file is saved
+		path: str
+			The path where the video file will be saved.
 		"""
 		
 		try:
@@ -160,46 +168,49 @@ class VideoServer(threading.Thread):
 			
 
 	def create_video_file(self, path) -> cv2.VideoWriter:
-		"""creates the video file using the path.
+		"""Creates the video file using the path.
 		
-		Parameter
-		---------
-			path: str
-			the parent path to the file. this is joined with the filename 
-			to create the absolute path
-			``video: C:\ \Activity Monitor \\ 127.0.0.1 \\ January \\ Videos \
-				\\ 12/1/2022-video.mkv``
+		Parameters
+		----------
+		path: str
+			The parent path of the file. This is joined with the
+			filename to create the absolute path e.g.
+			`video:
+			C:\\Activity Monitor\\127.0.0.1\\January\\Videos\\\
+				12/1/2022-video.mkv`
 	
-		Note
-		----
-		if the video frame should be the same size as incoming frames from client.
-		The video frame can be changed in the config file (amserver.ini)
+		Returns
+		-------
+		video_file: cv2.VideoWriter
+			The videoWriter object where the video frame received from
+			the client will be written.
 
-		Return
-		------
-			video_file: `cv2.VideoWriter`
-			the videoWriter object where the video frame received from the client 
-			will be written
+		Notes
+		-----
+		The video frame should be the same size as incoming frames from
+		client. The video frame can be changed in the config file
+		(amserver.ini).
 		"""
 		filename = self.create_unique_video_name(path)
 		file_path = Path.joinpath(path, filename)
 		FOURCC = cv2.VideoWriter_fourcc(*'XVID')
-		#SUPPORTS->XVID, MJPG(HIGH VIDEO QUOALITY), DIVX(FOR WINDOWS
+		# FOURCC = cv2.VideoWriter_fourcc(*'hvc1')
+		# SUPPORTS->XVID, MJPG(HIGH VIDEO QUALITY), DIVX(FOR WINDOWS
 		video_file = cv2.VideoWriter(
-			str(file_path), 
-			FOURCC, 
-			int(self.fps), 
+			str(file_path),
+			FOURCC,
+			int(self.fps),
 			(self.frame_height, self.frame_width))
 
 		return video_file
 			
 	def get_video_file(self, ip):
-		"""gets the created video file.
+		"""Gets the created video file.
 
-		Parameter
-		---------
-			ip: str
-			client's ip
+		Parameters
+		----------
+		ip: str
+			Client's IP address.
 		"""
 		# create_dir -> create_video_file -> get_video_file
 		path = self.create_dir(ip)
@@ -207,16 +218,17 @@ class VideoServer(threading.Thread):
 		return video_file
 
 	def create_unique_video_name(self, path):
-		""" Creates unique video file name.
+		"""Creates unique video file name.
 
-		Parameter
-		---------
+		Parameters
+		----------
 		path: str
-			The paths were the video files are saved.
+			The paths where the video files are saved.
 			
-		return:
-			filename: str
-				the new video file name.
+		Returns
+		-------
+		filename: str
+			The new video file name.
 		"""
 		date_str = datetime.now().strftime('%d-%m-%Y')
 		num = len([video_file for video_file in os.listdir(path) \
