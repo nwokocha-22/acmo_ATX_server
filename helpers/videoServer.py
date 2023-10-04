@@ -21,7 +21,7 @@ class StreamVideo(threading.Thread):
 	"""Receives the video frame comming from the connected client
 		and saves the video file at a designated directory.
 	"""
-	def __init__(self, client_ip,server_port, video_file, **kwargs):
+	def __init__(self, client_ip, server_port, video_file, **kwargs):
 		self.ip = client_ip
 		self.server_port = server_port
 		self.video_file = video_file
@@ -135,9 +135,17 @@ class VideoServer(threading.Thread):
 				for thread in self.connected_clients:
 					thread.join()
 
-	def check_platform(self):
-		"""Checks the operating system python is running on. """
-		return platform.system().lower()
+	def get_root_folder(self):
+		"""Checks the operating system and returns the appropriate root dir. 
+		
+		Return:
+			system path
+		"""
+		sys_os = platform.system().lower()
+		base = os.path.abspath(os.sep)
+		root_folder = os.path.join(base, 'home', 'Activity Monitor') \
+			if sys_os == 'linux' else os.path.join(base, 'Activity Monitor')
+		return root_folder
 
 	def create_dir(self, client_ip) -> str:
 		"""Creates the path where the video file will be saved if it
@@ -155,7 +163,7 @@ class VideoServer(threading.Thread):
 		"""
 		
 		try:
-			root_folder = Path("C:/Activity Monitor")
+			root_folder = Path(self.get_root_folder())
 			month = datetime.today().strftime("%B")
 			path = Path.joinpath(root_folder, client_ip, f"{month}", "Videos")
 			if path.exists():
@@ -195,13 +203,12 @@ class VideoServer(threading.Thread):
 		file_path = Path.joinpath(path, filename)
 		FOURCC = cv2.VideoWriter_fourcc(*'XVID')
 		# FOURCC = cv2.VideoWriter_fourcc(*'hvc1')
-		# SUPPORTS->XVID, MJPG(HIGH VIDEO QUALITY), DIVX(FOR WINDOWS
+		# SUPPORTS->XVID, MJPG(HIGH VIDEO QUALITY), DIVX(FOR WINDOWS)
 		video_file = cv2.VideoWriter(
 			str(file_path),
 			FOURCC,
 			int(self.fps),
 			(self.frame_height, self.frame_width))
-
 		return video_file
 			
 	def get_video_file(self, ip):
