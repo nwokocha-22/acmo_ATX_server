@@ -1,7 +1,9 @@
 import pytest
 import platform
 from datetime import datetime
+import os
 import cv2
+from pathlib import Path
 
 
 def test_video_file(video_server):
@@ -15,21 +17,18 @@ def test_video_file(video_server):
 def test_create_dir(video_server):
     """Tests the creation of directory to save video file. """
     ip = ' 127.0.0.1'
-    month = datetime.today().strftime("%B")
     path = video_server.create_dir(ip)
-    path_arr = path.split('/')
-    assert month == path_arr[-2]
+    assert str(path) == 'C:\\Activity Monitor\\ 127.0.0.1\\October\\Videos'
 
 def test_naming_of_video_file(video_server):
     """Tests the unique naming of the video file. """
-    path = "C:\\Activity Monitor\\127.0.0.1\\January\\Videos\\"
+    path = os.path.join(os.path.dirname(__file__), 'videos')
     filename = video_server.create_unique_video_name(path)
     assert filename.endswith('.mkv')
 
 def test_create_video_file(video_server):
-    """Tests successful creation of video file. """
-    path = "C:\\Activity Monitor\\127.0.0.1\\January\\Videos\\\
-				12/1/2022-video.mkv"
+    """Tests successful creation of video writer. """
+    path = Path(os.path.join(os.path.dirname(__file__), 'videos'))
     video_file = video_server.create_video_file(path)
     assert isinstance(video_file, cv2.VideoWriter)
 
@@ -37,5 +36,4 @@ def test_get_video_file(video_server):
     """Tests the retriever of the video writer. """
     video = video_server.get_video_file('127.0.0.1')
     assert isinstance(video, cv2.VideoWriter)
-
 

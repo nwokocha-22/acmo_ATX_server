@@ -163,7 +163,7 @@ class VideoServer(threading.Thread):
 		"""
 		
 		try:
-			root_folder = self.get_root_folder()
+			root_folder = Path(self.get_root_folder())
 			month = datetime.today().strftime("%B")
 			path = Path.joinpath(root_folder, client_ip, f"{month}", "Videos")
 			if path.exists():

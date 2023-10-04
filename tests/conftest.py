@@ -1,8 +1,8 @@
 import pytest
 import sys
 import os
-
-from ..helpers.videoServer import VideoServer, StreamVideo
+sys.path.append('.')
+from helpers.videoServer import VideoServer, StreamVideo
 
 @pytest.fixture
 def video_server():
