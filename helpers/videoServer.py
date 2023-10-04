@@ -21,7 +21,7 @@ class StreamVideo(threading.Thread):
 	"""Receives the video frame comming from the connected client
 		and saves the video file at a designated directory.
 	"""
-	def __init__(self, client_ip,server_port, video_file, **kwargs):
+	def __init__(self, client_ip, server_port, video_file, **kwargs):
 		self.ip = client_ip
 		self.server_port = server_port
 		self.video_file = video_file
@@ -136,7 +136,7 @@ class VideoServer(threading.Thread):
 					thread.join()
 
 	def get_root_folder(self):
-		"""Checks the operating system. 
+		"""Checks the operating system and returns the appropriate root dir. 
 		
 		Return:
 			system path
