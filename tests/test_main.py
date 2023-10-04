@@ -37,3 +37,16 @@ def test_get_video_file(video_server):
     video = video_server.get_video_file('127.0.0.1')
     assert isinstance(video, cv2.VideoWriter)
 
+def test_video_file_numbering(video_server):
+    """Test for numbered videos. """
+    path = Path(os.path.join(os.path.dirname(__file__), 'videos'))
+    files = os.listdir(path)
+
+    file_num = files[0].split('-')[-1].split('.')[0]
+     
+    for file in files:
+        _file = os.path.join(path, file)
+        os.remove(_file)
+
+    assert file_num == '0'
+   
