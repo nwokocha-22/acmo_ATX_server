@@ -201,9 +201,9 @@ class VideoServer(threading.Thread):
 		"""
 		filename = self.create_unique_video_name(path)
 		file_path = Path.joinpath(path, filename)
-		# FOURCC = cv2.VideoWriter_fourcc(*'XVID')
-		FOURCC = cv2.VideoWriter_fourcc(*'hvc1')
-		# SUPPORTS->XVID, MJPG(HIGH VIDEO QUALITY), DIVX(FOR WINDOWS
+		FOURCC = cv2.VideoWriter_fourcc(*'XVID')
+		# FOURCC = cv2.VideoWriter_fourcc(*'hvc1')
+		# SUPPORTS->XVID, MJPG(HIGH VIDEO QUALITY), DIVX(FOR WINDOWS)
 		video_file = cv2.VideoWriter(
 			str(file_path),
 			FOURCC,
