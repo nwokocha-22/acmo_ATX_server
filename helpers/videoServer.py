@@ -143,10 +143,8 @@ class VideoServer(threading.Thread):
 		"""
 		sys_os = platform.system().lower()
 		base = os.path.abspath(os.sep)
-		
 		root_folder = os.path.join(base, 'home', 'Activity Monitor') \
 			if sys_os == 'linux' else os.path.join(base, 'Activity Monitor')
-		
 		return root_folder
 
 	def create_dir(self, client_ip) -> str:
@@ -211,7 +209,6 @@ class VideoServer(threading.Thread):
 			FOURCC,
 			int(self.fps),
 			(self.frame_height, self.frame_width))
-
 		return video_file
 			
 	def get_video_file(self, ip):
