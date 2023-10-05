@@ -17,8 +17,9 @@ def test_video_file(video_server):
 def test_create_dir(video_server):
     """Tests the creation of directory to save video file. """
     ip = ' 127.0.0.1'
+    month = datetime.today().strftime("%B")
     path = video_server.create_dir(ip)
-    assert str(path) == 'C:\\Activity Monitor\\ 127.0.0.1\\October\\Videos'
+    assert str(path) == f'C:\\Activity Monitor\\ 127.0.0.1\\{month}\\Videos'
 
 def test_naming_of_video_file(video_server):
     """Tests the unique naming of the video file. """

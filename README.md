@@ -10,12 +10,13 @@
 
 - The ReceiveVideo class of the videoServer module handles the writing and streaming of video frames receipt through the UDP sockets and outputs the frame in a CV2 Window.
 
-- The captured video can be viewed in real time. The frames are also written to a video file that is saved to `C:\\Activity Monitor\\client ip\\current month\\Videos\\video_file.mkv`
+- The captured video can be viewed in real time. The frames are also written to a video file that is saved to `C:\\Activity Monitor\\client ip\\current month\\Videos\\video_file.mkv` (windows) and to `/home/Activity Monitor/client ip/current month/videos/video_file.mkv` for Linux.
 
 - The video file can be played using VLC media player
 
 ### Where to find Activity Logs transmitted from the client(s)
-- The log output in the client is transmitted through a tcp connection and saved in a log file in the server. The saved log file can be found in `C:\\Activity Monitor\\client ip\\current month\\Logs\\logfile.log`
+- The log output in the client is transmitted through a tcp connection and saved in a log file in the server. The saved log file can be found in `C:\\Activity Monitor\\client ip\\current month\\Logs\\logfile.log` (windows) or `/home/Activity Monitor/client ip/current month/Logs/logfile.log` for Linux.
+
 
 ### WINDOW SERVICES
 

@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from helpers.loggers.errorLog import error_logger
 import os
+import platform
 
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
@@ -47,6 +48,18 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         """
         return pickle.loads(data)
 
+    def get_root_folder(self):
+        """Checks the operating system and returns the appropriate root dir. 
+		
+		Return:
+			system path
+		"""
+        sys_os = platform.system().lower()
+        base = os.path.abspath(os.sep)
+        root_folder = os.path.join(base, 'home', 'Activity Monitor') \
+			if sys_os == 'linux' else os.path.join(base, 'Activity Monitor')
+        return root_folder
+
     def create_dir(self, client_ip):
         """Constructs a path where the log file will be saved.
 
@@ -61,7 +74,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             Path to the folder where the log file will be saved.
         """
         try:
-            root_folder = Path("C:/Activity Monitor")
+            root_folder = self.get_root_folder()
             month = datetime.today().strftime("%B")
             path = Path.joinpath(root_folder, client_ip, f"{month}", "Logs")
             if path.exists():
