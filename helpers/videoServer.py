@@ -2,9 +2,11 @@
 # 2023, implemented by maru koch
 
 import socket
+import struct
 import threading
 import cv2
 import platform
+import pickle
 import numpy as np
 from datetime import datetime
 from pathlib import Path
@@ -12,7 +14,6 @@ import os
 from helpers.loggers.errorLog import error_logger
 from configparser import ConfigParser
 
-_BUFFER: int = 65536
 _index = 0
 config = ConfigParser()
 config.read('amserver.ini')
@@ -21,18 +22,20 @@ class StreamVideo(threading.Thread):
 	"""Receives the video frame comming from the connected client
 		and saves the video file at a designated directory.
 	"""
-	def __init__(self, client_ip, server_port, video_file, **kwargs):
-		self.ip = client_ip
-		self.server_port = server_port
+	def __init__(self, client, client_ip, video_file, **kwargs):
+		self.client: socket.socket = client
+		self.ip: str = client_ip
 		self.video_file = video_file
 
 		super(StreamVideo, self).__init__(**kwargs)
 
 	def run(self):
-		thread = threading.Thread(target= self.recv_video_frame)
+		thread = threading.Thread(
+			target=self.recv_video_frame, args=(self.client,)
+		)
 		thread.start()
 
-	def recv_video_frame(self):
+	def recv_video_frame(self, client: socket.socket):
 		"""Establishes a connection with the client through a UDP
 		socket, receives the video frame transmitted by the client.
 		"""
@@ -40,28 +43,38 @@ class StreamVideo(threading.Thread):
 		video_window_name = f"{self.ip}-{_index}"
 		cv2.namedWindow(video_window_name, cv2.WINDOW_NORMAL)
 		_index += 1
-		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_udp:
-			sock_udp.setsockopt(
-				socket.SOL_SOCKET, socket.SO_REUSEADDR, _BUFFER)
-			sock_udp.bind(('', self.server_port))
-			
+		data = b""
+		payload_size = struct.calcsize("Q")
+		try:
 			while True:
-				packet, addr = sock_udp.recvfrom(_BUFFER) # 1 MB buffer
-				if packet == None:
-					break
+				while len(data) < payload_size:
+					packet = client.recv(4*1024)
+					if not packet: break
+					data += packet
+				packed_msg_size = data[:payload_size]
+				data = data[payload_size:]
 
-				if self.ip == addr[0]:
-					frame = cv2.imdecode(
-						np.frombuffer(packet, np.uint8), 
-						cv2.IMREAD_COLOR)
-					title = f'{self.ip if addr else "VIDEO"}'
-					self.video_file.write(frame)
-					cv2.imshow(video_window_name, frame)
-					key = cv2.waitKey(1) & 0xFF
+				msg_size = struct.unpack("Q", packed_msg_size)[0]
+				while len(data) < msg_size:
+					data += client.recv(4*1024)
+				
+				frame_data = data[:msg_size]
+				data = data[msg_size:]
+				frame = cv2.imdecode(
+					np.frombuffer(frame_data, np.uint8),
+					cv2.IMREAD_COLOR)
+				
+				self.video_file.write(frame)
+				cv2.imshow(video_window_name, frame)
+				key = cv2.waitKey(1) & 0xFF
 
 				if key == ord('q'):
-					sock_udp.close()
+					print("Ending Stream...")
+					client.close()
 					break
+		except ConnectionResetError:
+			# When the client disconnects:
+			error_logger.info(f"Videos: {self.ip} disconnected")
 
 		self.video_file.release()
 
@@ -82,7 +95,7 @@ class VideoServer(threading.Thread):
 		Resolution of each frame in pixels
 	"""
 
-	connected_clients = []
+	connected_clients = {}
 	"""
 	List of connected clients' IP addresses (list)
 	"""
@@ -117,29 +130,38 @@ class VideoServer(threading.Thread):
 				client_ip, _ = addr
 				print(f"{client_ip} connected")
 				error_logger.info(f"{client_ip} connected")
-				# once a new client is connected, create a video file
-				# using the client ip
-				video_file = self.get_video_file(client_ip)
-				data = client.recv(1024).decode()
+
+				request = client.recv(1024)
+				data, height, width = pickle.loads(request)
+				# Get client screen dimensions.
+				# Note: width and height have been interchanged.
+				if height and width:
+					self.frame_height = height
+					self.frame_width = width
 
 				if data == "ready":
+					# Once a new client is ready, create a video file
+					# using the client ip.
+					video_file = self.get_video_file(client_ip)
 					client.send(str.encode("shoot"))
-					video_stream_thread = StreamVideo(client_ip, 
-													  self.server_port, 
-													  video_file)
+					video_stream_thread = StreamVideo(
+						client, client_ip, video_file
+					)
 					video_stream_thread.start()
-					self.connected_clients.append(video_stream_thread)
+					self.connected_clients[client_ip] = video_stream_thread
 
-				print(f"{len(self.connected_clients)} clients connected")
-
-				for thread in self.connected_clients:
-					thread.join()
+					print(f"{len(self.connected_clients)} clients connected")
 
 	def get_root_folder(self):
-		"""Checks the operating system and returns the appropriate root dir. 
+		"""
+		Checks the operating system and returns the appropriate root
+		dir.
 		
-		Return:
-			system path
+		Returns
+		-------
+		str
+			Dynamic path to program folder in root directory depending
+			on platform.
 		"""
 		sys_os = platform.system().lower()
 		base = os.path.abspath(os.sep)
@@ -161,7 +183,6 @@ class VideoServer(threading.Thread):
 		path: str
 			The path where the video file will be saved.
 		"""
-		
 		try:
 			root_folder = Path(self.get_root_folder())
 			month = datetime.today().strftime("%B")
@@ -202,7 +223,6 @@ class VideoServer(threading.Thread):
 		filename = self.create_unique_video_name(path)
 		file_path = Path.joinpath(path, filename)
 		FOURCC = cv2.VideoWriter_fourcc(*'XVID')
-		# FOURCC = cv2.VideoWriter_fourcc(*'hvc1')
 		# SUPPORTS->XVID, MJPG(HIGH VIDEO QUALITY), DIVX(FOR WINDOWS)
 		video_file = cv2.VideoWriter(
 			str(file_path),

@@ -33,7 +33,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             except ConnectionResetError:
                 if not self.logged:
                     client_ip =  self.server.server_address[0]
-                    trace = f"{client_ip} disconnected"
+                    trace = f"Logs: {client_ip} disconnected"
                     error_logger.info(trace)
                     self.logged = True
                     break
@@ -74,7 +74,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             Path to the folder where the log file will be saved.
         """
         try:
-            root_folder = self.get_root_folder()
+            root_folder = Path(self.get_root_folder())
             month = datetime.today().strftime("%B")
             path = Path.joinpath(root_folder, client_ip, f"{month}", "Logs")
             if path.exists():
@@ -112,7 +112,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             fileHandler = logging.FileHandler(filename=str(file_name))
             
             logFileFormatter = logging.Formatter(
-                fmt=f"%(levelname)s : %(asctime)s - %(name)s - %(message)s",
+                fmt=f"%(levelname)s: %(asctime)s - %(name)s - %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
 

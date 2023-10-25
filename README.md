@@ -14,8 +14,12 @@
 
 - The video file can be played using VLC media player
 
+- Allow TCP connections on the port indicated in the config file (5055 is the default) to be able to receive video streams.
+
 ### Where to find Activity Logs transmitted from the client(s)
 - The log output in the client is transmitted through a tcp connection and saved in a log file in the server. The saved log file can be found in `C:\\Activity Monitor\\client ip\\current month\\Logs\\logfile.log` (windows) or `/home/Activity Monitor/client ip/current month/Logs/logfile.log` for Linux.
+
+- Allow TCP connections on port 9020 to be able to receive logs.
 
 
 ### WINDOW SERVICES
