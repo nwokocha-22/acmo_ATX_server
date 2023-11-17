@@ -89,6 +89,7 @@ class LogCycler(threading.Thread):
                 key=os.path.getmtime
             )
             try:
+                logger.info(f"Delete operation, target: {files[0]}")
                 os.remove(files[0])
             except IndexError: # No files to delete
                 # Send email as well; space not enough but no files to
