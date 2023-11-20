@@ -100,7 +100,7 @@ class VideoServer(threading.Thread):
 	List of connected clients' IP addresses (list)
 	"""
 
-	fps: int = config['VIDEO']['fps']
+	fps: int = int(config['VIDEO']['fps'])
 	frame_height: int = int(config['VIDEO']['frame.height'])
 	frame_width: int = int(config['VIDEO']['frame.width'])
 	server_ip: str = socket.gethostbyname(socket.gethostname())
@@ -113,8 +113,9 @@ class VideoServer(threading.Thread):
 		self.connect()
 
 	def connect(self):
-		"""Establishes a three way hand shake with the clients, and
-		spawn a thread to send data to the connect client through a udp
+		"""
+		Establishes a three way hand shake with the clients, and spawn
+		a thread to send data to the connect client through a udp
 		socket.
 
 		"""
