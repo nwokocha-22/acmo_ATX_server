@@ -185,8 +185,9 @@ class LogCycler(threading.Thread):
             server.sendmail(sender, receiver, message.as_string())
     
     def template(self) -> Tuple[str, str]:
-        """Constructs a html and plain messages, either of which will sent
-        to the receiver depending on the receiver's email client
+        """
+        Constructs an html and plain message, either of which will be
+        sent to the receiver depending on the receiver's email client
         compatibility.
 
         Returns
