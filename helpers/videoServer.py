@@ -4,13 +4,15 @@
 import socket
 import struct
 import threading
-import cv2
 import platform
 import pickle
+import os
 import numpy as np
 from datetime import datetime
 from pathlib import Path
-import os
+
+import cv2
+
 from helpers.loggers.errorLog import error_logger
 from configparser import ConfigParser
 
