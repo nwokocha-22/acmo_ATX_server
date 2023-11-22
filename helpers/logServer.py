@@ -32,7 +32,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
                 self.logRecord(record)
             except ConnectionResetError:
                 if not self.logged:
-                    client_ip =  self.server.server_address[0]
+                    client_ip =  self.client_address
                     trace = f"Logs: {client_ip} disconnected"
                     error_logger.info(trace)
                     self.logged = True
@@ -93,7 +93,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         record: str
             Log file received from client
         """
-        client_ip =  self.server.server_address[0]
+        client_ip =  self.client_address
         path = self.create_dir(client_ip)
 
         if not path.exists():
