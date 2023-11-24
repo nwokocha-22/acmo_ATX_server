@@ -7,6 +7,7 @@ import threading
 import platform
 import pickle
 import os
+import time
 import numpy as np
 from datetime import datetime
 from pathlib import Path
@@ -28,6 +29,7 @@ class StreamVideo(threading.Thread):
 		self.client: socket.socket = client
 		self.ip: str = client_ip
 		self.video_file = video_file
+		self.tolerance: int = 10
 
 		super(StreamVideo, self).__init__(**kwargs)
 
@@ -36,6 +38,8 @@ class StreamVideo(threading.Thread):
 			target=self.recv_video_frame, args=(self.client,)
 		)
 		thread.start()
+		overwatch = threading.Thread(target=self.stream_overwatch)
+		overwatch.start()
 
 	def recv_video_frame(self, client: socket.socket):
 		"""Establishes a connection with the client through a UDP
@@ -67,6 +71,7 @@ class StreamVideo(threading.Thread):
 					cv2.IMREAD_COLOR)
 				
 				self.video_file.write(frame)
+				self.tolerance = 10
 				cv2.imshow(video_window_name, frame)
 				key = cv2.waitKey(1) & 0xFF
 
@@ -77,8 +82,22 @@ class StreamVideo(threading.Thread):
 		except ConnectionResetError:
 			# When the client disconnects:
 			error_logger.info(f"Videos: {self.ip} disconnected")
+		except ConnectionAbortedError:
+			# When the server closes the connection:
+			print("Resetting connection")
 
 		self.video_file.release()
+	
+	def stream_overwatch(self):
+		"""
+		A function to check if the streaming function is responsive.
+		"""
+		while self.tolerance > 0:
+			# print("Tolerance:", self.tolerance)
+			wait_time = self.tolerance
+			self.tolerance = 0
+			time.sleep(wait_time)
+		self.client.close()
 
 
 class VideoServer(threading.Thread):
