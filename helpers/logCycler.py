@@ -107,7 +107,6 @@ class LogCycler(threading.Thread):
         video_file: pathlib.Path
             Path of video file to be compressed.
         """
-        global logger
         name, _ = os.path.basename(video_file).split(".")
         directory = os.path.dirname(video_file)
         output_file = name + ".mp4"
@@ -118,7 +117,7 @@ class LogCycler(threading.Thread):
             ffmpeg.input(video_file).output(output_name)\
                 .run(capture_stdout=True, capture_stderr=True)
         except ffmpeg.Error as e:
-            logger.exception("Conversion Error:", e.stderr)
+            logger.exception(f"Conversion Error: {e.stderr.decode('utf8')}")
             return
         
         # Remove the original video log.
@@ -130,7 +129,7 @@ class LogCycler(threading.Thread):
         os.makedirs(os.path.dirname(comp_path), exist_ok=True)
         res = subprocess.run(f'.{os.path.sep}ffmpeg.exe -i "{output_name}" '
             f'-vcodec libx264 -crf {self.quality} "{comp_path}"', shell=True,
-            stdout=subprocess.PIPE, text=True
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         if res.stderr:
             print("Compress Error:", res.stderr)
@@ -153,7 +152,7 @@ class LogCycler(threading.Thread):
             self.send_email(sender, password, receiver)
             logger.info(f"Email sent to {receiver}")
         except Exception as ex:
-            logger.exception(ex)
+            logger.exception(str(ex))
     
     def send_email(self, sender: str, password: str, receiver: str):
         """
@@ -228,3 +227,10 @@ class LogCycler(threading.Thread):
                 """
 
         return html, plain
+
+
+if __name__ == "__main__":
+    logCycler = LogCycler()
+    logCycler.start()
+
+    logCycler.join()
