@@ -88,7 +88,7 @@ def template(content: str) -> Tuple[str, str]:
                         </p>
                     </body>
                     <footer>
-                        <p><i>Log Cycler ({datetime.now().year})</i></p>
+                        <p><i>Activity Monitor ({datetime.now().year})</i></p>
                     </footer>
                     </html>
                 """
