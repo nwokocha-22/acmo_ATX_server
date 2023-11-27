@@ -15,6 +15,7 @@ from pathlib import Path
 import cv2
 
 from helpers.loggers.errorLog import error_logger
+from helpers.email import alert
 from configparser import ConfigParser
 
 _index = 0
@@ -30,6 +31,7 @@ class StreamVideo(threading.Thread):
 		self.ip: str = client_ip
 		self.video_file = video_file
 		self.tolerance: int = 10
+		self.server_ip: str = socket.gethostbyname(socket.gethostname())
 
 		super(StreamVideo, self).__init__(**kwargs)
 
@@ -82,8 +84,17 @@ class StreamVideo(threading.Thread):
 		except ConnectionResetError:
 			# When the client disconnects:
 			error_logger.info(f"Videos: {self.ip} disconnected")
+			message = (
+				f"{self.ip} disconnected from {self.server_ip}."
+			)
+			alert(message)
 		except ConnectionAbortedError:
 			# When the server closes the connection:
+			message = (
+				f"The connnection between {self.ip} and {self.server_ip} has "
+				"been closed in order to reset the connection."
+			)
+			alert(message)
 			print("Resetting connection")
 
 		self.video_file.release()
@@ -162,6 +173,12 @@ class VideoServer(threading.Thread):
 					self.frame_width = width
 
 				if data == "ready":
+					# Send an email notification
+					message = (
+						f"{client_ip} connected to {self.server_ip} and is "
+						"ready to transmit video frames."
+					)
+					alert(message)
 					# Once a new client is ready, create a video file
 					# using the client ip.
 					video_file = self.get_video_file(client_ip)
