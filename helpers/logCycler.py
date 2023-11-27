@@ -152,7 +152,7 @@ class LogCycler(threading.Thread):
         try:
             sender = config["EMAIL"]["email_host_user"]
             password = config["EMAIL"]["email_host_password"]
-            receiver = config["EMAIL"]["receiver_email"]
+            receiver = config["EMAIL"]["admin_email"]
 
             self.send_email(sender, password, receiver)
             logger.info(f"Email sent to {receiver}")
