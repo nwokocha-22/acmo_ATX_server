@@ -145,8 +145,8 @@ class LogCycler(threading.Thread):
     
     def alert(self):
         """
-        Prepare and send email about user whose session has been
-        terminated.
+        Get email configuration and pass to function that will send the
+        email notification.
         """
         # Get sender, password, and receiver details from config file.
         try:
@@ -161,8 +161,7 @@ class LogCycler(threading.Thread):
     
     def send_email(self, sender: str, password: str, receiver: str):
         """
-        Sends an email when a user session has been terminated for killing
-        the activity monitor client to the email address specified.
+        Sends an email about the storage space left to the receiver.
 
         Parameters
         ----------
