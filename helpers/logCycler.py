@@ -122,7 +122,7 @@ class LogCycler(threading.Thread):
             if size_in_kb < 0.6:
                 logger.info(f"{video_file} is too small to compress.")
                 # TO DO: remove file
-                # os.remove(video_file)
+                os.remove(video_file)
             return
         
         # TO DO: Remove the original video log.
@@ -136,7 +136,7 @@ class LogCycler(threading.Thread):
             f'-vcodec libx264 -crf {self.quality} "{comp_path}"', shell=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
-        if res.stderr:
+        if res.returncode != 0:
             # print("Compress Error:", res.stderr)
             logger.error(f"Compress Error: {res.stderr}")
             return
