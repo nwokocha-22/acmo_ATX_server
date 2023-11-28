@@ -53,7 +53,7 @@ def send_email(sender: str, password: str, receiver: str, content: str):
     """
     ctx = ssl.create_default_context()
     message = MIMEMultipart("alternative")
-    message["Subject"] = "User Session Terminated"
+    message["Subject"] = "Activity Monitor Connection"
     message["From"] = sender
     message["To"] = receiver
 

@@ -126,7 +126,8 @@ class LogCycler(threading.Thread):
             return
         
         # TO DO: Remove the original video log.
-        # os.remove(video_file)
+        logger.info(f"Converted {video_file} -> {output_file}")
+        os.remove(video_file)
 
         # Compress video
         dets = directory.split(os.path.sep)
@@ -141,6 +142,7 @@ class LogCycler(threading.Thread):
             logger.error(f"Compress Error: {res.stderr}")
             return
         # Remove the converted video log.
+        logger.info(f"Compressed {output_file} -> {comp_path}")
         os.remove(output_name)
     
     def alert(self):
@@ -174,7 +176,7 @@ class LogCycler(threading.Thread):
         """
         ctx = ssl.create_default_context()
         message = MIMEMultipart("alternative")
-        message["Subject"] = "User Session Terminated"
+        message["Subject"] = "Logger Storage Alert"
         message["From"] = sender
         message["To"] = receiver
 
