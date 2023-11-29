@@ -90,11 +90,11 @@ class StreamVideo(threading.Thread):
 			alert(message)
 		except ConnectionAbortedError:
 			# When the server closes the connection:
-			message = (
-				f"The connnection between {self.ip} and {self.server_ip} has "
-				"been closed in order to reset the connection."
-			)
-			alert(message)
+			# message = (
+			# 	f"The connnection between {self.ip} and {self.server_ip} has "
+			# 	"been closed in order to reset the connection."
+			# )
+			# alert(message)
 			print("Resetting connection")
 
 		self.video_file.release()
