@@ -84,10 +84,10 @@ class StreamVideo(threading.Thread):
 		except ConnectionResetError:
 			# When the client disconnects:
 			error_logger.info(f"Videos: {self.ip} disconnected")
-			message = (
-				f"{self.ip} disconnected from {self.server_ip}."
-			)
-			alert(message)
+			# message = (
+			# 	f"{self.ip} disconnected from {self.server_ip}."
+			# )
+			# alert(message)
 		except ConnectionAbortedError:
 			# When the server closes the connection:
 			# message = (
@@ -174,11 +174,11 @@ class VideoServer(threading.Thread):
 
 				if data == "ready":
 					# Send an email notification
-					message = (
-						f"{client_ip} connected to {self.server_ip} and is "
-						"ready to transmit video frames."
-					)
-					alert(message)
+					# message = (
+					# 	f"{client_ip} connected to {self.server_ip} and is "
+					# 	"ready to transmit video frames."
+					# )
+					# alert(message)
 					# Once a new client is ready, create a video file
 					# using the client ip.
 					video_file = self.get_video_file(client_ip)
