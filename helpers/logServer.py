@@ -6,7 +6,7 @@ import socketserver
 import struct
 import os
 import platform
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 
 from helpers.loggers.errorLog import error_logger
@@ -105,9 +105,23 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             name = record.name
         logger = logging.getLogger()
 
-        if not logger.hasHandlers():
-            date = datetime.today().strftime("%d-%m-%Y")
-            file_ = f"{date}-activityLog.log"
+        if logger.hasHandlers():
+            handler = logger.handlers[0]
+            filename = handler.baseFilename
+            logpath = Path(filename)
+            filedate = logpath.name.split("-a")[0]
+            # Convert file date to datetime object.
+            filedate = datetime.strptime(
+                f"{filedate} 23:59:59", "%d-%m-%Y %H:%M:%S"
+            )
+            # Get date from datetime object.
+            filedate = filedate.date()
+
+        # Create a new log file if there are no current handlers and if
+        # it is a new day. Each day should have its own log file.
+        if not logger.hasHandlers() or filedate != date.today():
+            tdate = datetime.today().strftime("%d-%m-%Y")
+            file_ = f"{tdate}-activityLog.log"
             file_name = Path.joinpath(path, file_)
             fileHandler = logging.FileHandler(filename=str(file_name))
             
