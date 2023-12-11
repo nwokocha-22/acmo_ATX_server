@@ -20,11 +20,20 @@ file_formater = logging.Formatter(
 file_logger.setFormatter(file_formater)
 logger.addHandler(file_logger)
 
-def alert(content: str):
+def alert(content: str, should: bool = True) -> None:
     """
     Get email configuration and pass to function that will send the
     email notification.
+
+    Parameters
+    ----------
+    content: str
+        The content of the email.
+    should: bool
+        Boolean value for whether the email should be sent or not.
     """
+    if not should:
+        return
     # Get sender, password, and receiver details from config file.
     try:
         sender = config["EMAIL"]["email_host_user"]
