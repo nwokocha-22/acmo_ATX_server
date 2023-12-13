@@ -120,6 +120,10 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         # Create a new log file if there are no current handlers and if
         # it is a new day. Each day should have its own log file.
         if not logger.hasHandlers() or filedate != date.today():
+            try:
+                logger.handlers.clear()
+            except:
+                pass
             tdate = datetime.today().strftime("%d-%m-%Y")
             file_ = f"{tdate}-activityLog.log"
             file_name = Path.joinpath(path, file_)
