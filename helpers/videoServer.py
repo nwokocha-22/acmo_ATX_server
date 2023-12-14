@@ -89,7 +89,7 @@ class StreamVideo(threading.Thread):
 				f"{self.ip} disconnected from {self.server_ip}."
 			)
 			alert_dict[self.ip] = True
-			alert(message)
+			# alert(message)
 		except ConnectionAbortedError:
 			# When the server closes the connection:
 			# message = (
@@ -182,9 +182,9 @@ class VideoServer(threading.Thread):
 					)
 					if client_ip not in alert_dict.keys():
 						alert_dict[client_ip] = False
-						alert(message)
+						# alert(message)
 					else:
-						alert(message, alert_dict[client_ip])
+						# alert(message, alert_dict[client_ip])
 						alert_dict[client_ip] = False
 					# Once a new client is ready, create a video file
 					# using the client ip.
