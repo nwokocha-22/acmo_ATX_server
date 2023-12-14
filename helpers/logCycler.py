@@ -117,10 +117,10 @@ class LogCycler(threading.Thread):
             ffmpeg.input(video_file).output(output_name)\
                 .run(capture_stdout=True, capture_stderr=True)
         except ffmpeg.Error as e:
-            logger.exception(f"Conversion Error: {e.stderr.decode('utf8')}")
+            # logger.exception(f"Conversion Error: {e.stderr.decode('utf8')}")
             size_in_kb = Path(video_file).stat().st_size / 1024
             if size_in_kb < 0.6:
-                logger.info(f"{video_file} is too small to compress.")
+                logger.info(f"{video_file} is too small to convert.")
                 # TO DO: remove file
                 os.remove(video_file)
             return
